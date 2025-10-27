@@ -1,2 +1,1 @@
-// Wagmi configuration placeholder
-
+// wagmi + Avalanche Fuji setup placeholder
