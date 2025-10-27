@@ -1,0 +1,2 @@
+// Avalanche blockchain service placeholder
+

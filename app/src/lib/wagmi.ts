@@ -1,0 +1,2 @@
+// Wagmi configuration placeholder
+

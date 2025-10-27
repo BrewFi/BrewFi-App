@@ -1,0 +1,2 @@
+// Wallet connection component placeholder
+

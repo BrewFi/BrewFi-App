@@ -1,0 +1,11 @@
+{
+  "name": "coffeechain",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CoffeeChain - Avalanche Hackathon Project",
+  "scripts": {},
+  "keywords": ["avalanche", "web3", "coffee", "supply-chain"],
+  "author": "",
+  "license": "MIT"
+}
+
