@@ -12,19 +12,25 @@ const ReadData2 = () => {
 
   // get the balance of the connected address
   const { data: balance } = useReadContract({
-    ...tokenAbi,
+    address: tokenAbi.address as `0x${string}`,
+    abi: tokenAbi.abi,
     functionName: 'balanceOf',
-    args: [address],
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address,
+    },
   })
   // get the token name
   const { data: tokenName } = useReadContract({
-    ...tokenAbi,
+    address: tokenAbi.address as `0x${string}`,
+    abi: tokenAbi.abi,
     functionName: 'name',
     args: [],
   })
   // get the total supply of the token
   const { data: totalSupply } = useReadContract({
-    ...tokenAbi,
+    address: tokenAbi.address as `0x${string}`,
+    abi: tokenAbi.abi,
     functionName: 'totalSupply',
     args: [],
   })
