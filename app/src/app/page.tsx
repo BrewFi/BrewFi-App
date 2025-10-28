@@ -48,15 +48,15 @@ export default function Home() {
       <div className="px-8 pb-8">
         <div className="max-w-7xl mx-auto grid grid-cols-3 gap-8">
           <div className="cyber-card p-6">
-            <div className="text-3xl font-bold text-cyber-green">1,337</div>
+            <div className="text-3xl font-bold text-cyber-green">404</div>
             <div className="text-gray-400">Active Users</div>
           </div>
           <div className="cyber-card p-6">
-            <div className="text-3xl font-bold text-cyber-blue">42</div>
+            <div className="text-3xl font-bold text-cyber-blue">9</div>
             <div className="text-gray-400">Coffee Shops</div>
           </div>
           <div className="cyber-card p-6">
-            <div className="text-3xl font-bold text-cyber-pink">25K+</div>
+            <div className="text-3xl font-bold text-cyber-pink">5K+</div>
             <div className="text-gray-400">$BREWFI Earned</div>
           </div>
         </div>
