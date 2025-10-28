@@ -1,8 +1,10 @@
 import type { Metadata } from 'next'
 import '../styles/globals.css'
+import { Web3Provider } from '@/providers/Web3Provider';
+
 
 export const metadata: Metadata = {
-  title: 'CoffeeChain | Web3 Loyalty Rewards',
+  title: 'BrewFi | Web3 Loyalty Rewards',
   description: 'Earn $BREWFI tokens with every coffee purchase on Avalanche',
 }
 
@@ -13,8 +15,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="cyber-grid min-h-screen">
-        {children}
+      <body>
+        <Web3Provider>
+          {children}
+        </Web3Provider>
       </body>
     </html>
   )

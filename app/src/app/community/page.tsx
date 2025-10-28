@@ -1,5 +1,7 @@
 'use client'
 
+import { WalletConnect } from '@/components/WalletConnect'
+
 // Community page - List of coffee shops accepting $BREWFI
 
 export default function Community() {
@@ -7,10 +9,8 @@ export default function Community() {
     <div className="min-h-screen p-8">
       {/* Navbar */}
       <nav className="flex justify-between items-center mb-12 pb-4 border-b border-cyber-blue/30">
-        <h1 className="text-2xl font-bold neon-text">☕ CoffeeChain</h1>
-        <button className="px-4 py-2 cyber-border rounded-lg text-sm">
-          Connect Wallet
-        </button>
+        <h1 className="text-2xl font-bold neon-text">☕ BrewFi</h1>
+        <WalletConnect />
       </nav>
 
       {/* Header */}

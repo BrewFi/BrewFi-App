@@ -1,5 +1,7 @@
 'use client'
 
+import { WalletConnect } from '@/components/WalletConnect'
+
 // Landing page - Connect wallet and enter app
 
 export default function Home() {
@@ -8,7 +10,7 @@ export default function Home() {
       {/* Hero Section */}
       <div className="text-center space-y-8 max-w-4xl">
         <h1 className="text-7xl font-bold">
-          <span className="neon-text">☕ CoffeeChain</span>
+          <span className="neon-text">☕ BrewFi</span>
         </h1>
         
         <p className="text-2xl text-cyan-400 coffee-glow">
@@ -21,12 +23,10 @@ export default function Home() {
         </p>
 
         {/* CTA Buttons */}
-        <div className="flex gap-4 justify-center pt-8">
-          <button className="px-8 py-4 bg-cyber-blue text-black font-bold rounded-lg hover:animate-glow transition-all">
-            Connect Wallet
-          </button>
+        <div className="flex gap-4 justify-center items-center pt-8">
+          <WalletConnect />
           
-          <button className="px-8 py-4 border-2 border-cyber-pink text-cyber-pink font-bold rounded-lg hover:bg-cyber-pink hover:text-black transition-all">
+          <button className="px-8 py-4 border-2 border-cyber-pink text-cyber-pink font-bold rounded-lg hover:bg-cyber-pink hover:text-black transition-all ml-[10%]">
             Try Demo
           </button>
         </div>

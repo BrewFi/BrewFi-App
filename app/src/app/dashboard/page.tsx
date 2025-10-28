@@ -1,5 +1,7 @@
 'use client'
 
+import { WalletConnect } from '@/components/WalletConnect'
+
 // Dashboard - User balance, buy coffee, redeem rewards
 
 export default function Dashboard() {
@@ -7,10 +9,8 @@ export default function Dashboard() {
     <div className="min-h-screen p-8">
       {/* Navbar */}
       <nav className="flex justify-between items-center mb-12 pb-4 border-b border-cyber-blue/30">
-        <h1 className="text-2xl font-bold neon-text">☕ CoffeeChain</h1>
-        <button className="px-4 py-2 cyber-border rounded-lg text-sm">
-          0x1234...5678
-        </button>
+        <h1 className="text-2xl font-bold neon-text">☕ BrewFi</h1>
+        <WalletConnect />
       </nav>
 
       {/* Balance Card */}
