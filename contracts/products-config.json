@@ -1,0 +1,38 @@
+{
+  "products": [
+    {
+      "name": "Coffee",
+      "priceUSD": "5000000",
+      "rewardRatio": "1000000000000000000"
+    },
+    {
+      "name": "Espresso",
+      "priceUSD": "3000000",
+      "rewardRatio": "1000000000000000000"
+    },
+    {
+      "name": "Latte",
+      "priceUSD": "6000000",
+      "rewardRatio": "1200000000000000000"
+    },
+    {
+      "name": "Cappuccino",
+      "priceUSD": "5500000",
+      "rewardRatio": "1100000000000000000"
+    },
+    {
+      "name": "Americano",
+      "priceUSD": "4000000",
+      "rewardRatio": "1000000000000000000"
+    },
+    {
+      "name": "Mocha",
+      "priceUSD": "7000000",
+      "rewardRatio": "1500000000000000000"
+    }
+  ],
+  "notes": {
+    "priceUSD": "Price in USD scaled by 1e6 (USDC precision). Example: 5000000 = $5.00",
+    "rewardRatio": "Reward ratio scaled by 1e18. Example: 1000000000000000000 = 1.0x, 1200000000000000000 = 1.2x"
+  }
+}

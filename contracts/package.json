@@ -1,0 +1,35 @@
+{
+  "name": "brewfi-token",
+  "version": "1.0.0",
+  "description": "BREWFI ERC-20 Token on Avalanche Fuji Testnet",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "test:purchase": "hardhat test test/BrewFiPurchase.test.js",
+    "deploy:fuji": "hardhat run scripts/deploy.js --network fuji",
+    "deploy:purchase": "hardhat run scripts/deployPurchase.js --network fuji",
+    "fund:purchase": "hardhat run scripts/fundPurchaseContract.js --network fuji",
+    "verify:fuji": "hardhat run scripts/verify.js --network fuji",
+    "verify:snowtrace": "hardhat run scripts/verify.js --network snowtrace",
+    "verify:manual": "hardhat run scripts/verifyManual.js --network snowtrace",
+    "airdrop": "node scripts/airdrop.js"
+  },
+  "keywords": [
+    "ethereum",
+    "erc20",
+    "token",
+    "avalanche"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.19.0"
+  },
+  "dependencies": {
+    "@chainlink/contracts": "^1.5.0",
+    "@openzeppelin/contracts": "^5.0.0",
+    "dotenv": "^16.3.1"
+  }
+}
