@@ -34,7 +34,7 @@ export function WalletConnect() {
                 return (
                   <button 
                     onClick={openConnectModal} 
-                    className="px-4 py-2 cyber-border rounded-lg text-sm hover:bg-cyber-blue/10 transition-all"
+                    className="px-4 py-2 cyber-border rounded-lg text-sm hover:bg-cyber-blue hover:text-black transition-all"
                   >
                     Connect Wallet
                   </button>
@@ -56,7 +56,7 @@ export function WalletConnect() {
                 <div className="flex gap-2">
                   <button
                     onClick={openChainModal}
-                    className="px-3 py-2 cyber-border rounded-lg text-sm hover:bg-cyber-blue/10 transition-all flex items-center gap-2"
+                    className="px-3 py-2 cyber-border rounded-lg text-sm hover:bg-cyber-blue hover:text-black transition-all flex items-center gap-2"
                   >
                     {chain.hasIcon && (
                       <div
@@ -82,7 +82,7 @@ export function WalletConnect() {
 
                   <button
                     onClick={openAccountModal}
-                    className="px-4 py-2 cyber-border rounded-lg text-sm hover:bg-cyber-blue/10 transition-all"
+                    className="px-4 py-2 cyber-border rounded-lg text-sm hover:bg-cyber-blue hover:text-black transition-all"
                   >
                     {account.displayName}
                     {account.displayBalance

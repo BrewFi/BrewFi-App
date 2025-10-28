@@ -23,7 +23,12 @@ export function Navbar() {
         </div>
       </div>
       
-      <WalletConnect />
+      <div className="flex gap-4 items-center">
+        <WalletConnect />
+        <button className="px-6 py-2 border-2 border-cyber-pink text-cyber-pink font-bold rounded-lg hover:bg-cyber-pink hover:text-black transition-all">
+          Buy Coffee Now
+        </button>
+      </div>
     </nav>
   )
 }

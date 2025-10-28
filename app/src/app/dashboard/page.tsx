@@ -1,17 +1,14 @@
 'use client'
 
-import { WalletConnect } from '@/components/WalletConnect'
+import { Navbar } from '@/components/Navbar'
 
 // Dashboard - User balance, buy coffee, redeem rewards
 
 export default function Dashboard() {
   return (
-    <div className="min-h-screen p-8">
-      {/* Navbar */}
-      <nav className="flex justify-between items-center mb-12 pb-4 border-b border-cyber-blue/30">
-        <h1 className="text-2xl font-bold neon-text">☕ BrewFi</h1>
-        <WalletConnect />
-      </nav>
+    <div className="min-h-screen">
+      <Navbar />
+      <div className="p-8">
 
       {/* Balance Card */}
       <div className="max-w-4xl mx-auto space-y-8">
@@ -58,6 +55,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

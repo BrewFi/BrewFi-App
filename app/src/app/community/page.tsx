@@ -1,17 +1,14 @@
 'use client'
 
-import { WalletConnect } from '@/components/WalletConnect'
+import { Navbar } from '@/components/Navbar'
 
 // Community page - List of coffee shops accepting $BREWFI
 
 export default function Community() {
   return (
-    <div className="min-h-screen p-8">
-      {/* Navbar */}
-      <nav className="flex justify-between items-center mb-12 pb-4 border-b border-cyber-blue/30">
-        <h1 className="text-2xl font-bold neon-text">☕ BrewFi</h1>
-        <WalletConnect />
-      </nav>
+    <div className="min-h-screen">
+      <Navbar />
+      <div className="p-8">
 
       {/* Header */}
       <div className="max-w-6xl mx-auto mb-12">
@@ -86,6 +83,7 @@ export default function Community() {
             <span className="text-cyber-blue text-sm">+10 $BREWFI</span>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )
