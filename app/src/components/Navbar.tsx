@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation'
 import { Settings } from 'lucide-react'
 import { WalletConnect } from './WalletConnect'
+import Image from 'next/image'
 
 // Navigation bar component
 
@@ -15,7 +16,16 @@ export function Navbar() {
   return (
     <nav className="flex justify-between items-center p-6 border-b border-cyber-blue/30">
       <div className="flex items-center space-x-8">
-        <h1 className="text-2xl font-bold neon-text">☕ BrewFi</h1>
+        <div className="flex items-center gap-3">
+          <Image 
+            src="/images/brewficoin.png" 
+            alt="BrewFi Coin" 
+            width={40} 
+            height={40}
+            className="rounded-full"
+          />
+          <h1 className="text-2xl font-bold neon-text">BrewFi</h1>
+        </div>
       </div>
       
       <div className="flex gap-4 items-center">

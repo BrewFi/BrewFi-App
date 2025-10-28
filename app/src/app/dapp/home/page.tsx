@@ -2,6 +2,7 @@
 
 import { Navbar } from '@/components/Navbar'
 import { BottomNav } from '@/components/BottomNav'
+import Image from 'next/image'
 
 // DApp Home page - Connect wallet and enter app
 
@@ -16,8 +17,15 @@ export default function DAppHome() {
           
           {/* Left Side - Text Content */}
           <div className="space-y-4">
-            <h1 className="text-6xl lg:text-7xl font-bold">
-              <span className="neon-text">☕ BrewFi</span>
+            <h1 className="text-6xl lg:text-7xl font-bold flex items-center gap-4">
+              <Image 
+                src="/images/brewficoin.png" 
+                alt="BrewFi Coin" 
+                width={280} 
+                height={280}
+                className="w-56 h-56 lg:w-[280px] lg:h-[280px] rounded-full"
+              />
+              <span className="neon-text">BrewFi</span>
             </h1>
             
             <p className="text-3xl text-cyan-400 coffee-glow font-semibold">
@@ -48,12 +56,12 @@ export default function DAppHome() {
         {/* Stats Section - Moved Up */}
         <div className="grid grid-cols-3 gap-4 lg:gap-8 mt-auto">
           <div className="cyber-card p-4 lg:p-6">
-            <div className="text-2xl lg:text-3xl font-bold text-cyber-blue">404</div>
+            <div className="text-2xl lg:text-3xl font-bold text-cyber-blue">199</div>
             <div className="text-gray-400 text-xs lg:text-base">Active Users</div>
           </div>
           <a href="/dapp/community" className="block">
             <button className="cyber-card p-4 lg:p-6 w-full hover:scale-105 hover:shadow-lg hover:shadow-cyber-blue/20 transition-all cursor-pointer">
-              <div className="text-2xl lg:text-3xl font-bold text-cyber-blue">9</div>
+              <div className="text-2xl lg:text-3xl font-bold text-cyber-blue">10</div>
               <div className="text-gray-400 text-xs lg:text-base">Coffee Shops</div>
             </button>
           </a>
