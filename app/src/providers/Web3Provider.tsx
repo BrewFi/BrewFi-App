@@ -14,6 +14,13 @@ import {
   QueryClientProvider,
   QueryClient,
 } from "@tanstack/react-query";
+import { 
+  coreWallet,
+  metaMaskWallet,
+  coinbaseWallet,
+  walletConnectWallet,
+  injectedWallet,
+} from '@rainbow-me/rainbowkit/wallets';
 
 // Get your project ID at https://cloud.walletconnect.com
 // 1. Sign up for free
@@ -23,6 +30,16 @@ const config = getDefaultConfig({
   appName: 'BrewFi - Coffee Loyalty Rewards',
   projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'YOUR_PROJECT_ID',
   chains: [avalancheFuji, avalanche],
+  wallets: [
+    {
+      groupName: 'Avalanche Wallets',
+      wallets: [coreWallet],
+    },
+    {
+      groupName: 'Popular',
+      wallets: [metaMaskWallet, coinbaseWallet, walletConnectWallet, injectedWallet],
+    },
+  ],
   ssr: true, // If your dApp uses server side rendering (SSR)
 });
 
