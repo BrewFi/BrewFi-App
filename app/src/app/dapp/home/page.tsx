@@ -58,7 +58,7 @@ export default function DAppHome() {
             </button>
           </a>
           <div className="cyber-card p-4 lg:p-6">
-            <div className="text-2xl lg:text-3xl font-bold text-cyber-pink">25K+</div>
+            <div className="text-2xl lg:text-3xl font-bold text-cyber-pink">5K+</div>
             <div className="text-gray-400 text-xs lg:text-base">$BREWFI Earned</div>
           </div>
         </div>

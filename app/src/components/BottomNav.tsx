@@ -1,6 +1,6 @@
 'use client'
 
-import { ShoppingBag, ArrowLeftRight, Send, Download } from 'lucide-react'
+import { Coffee, ArrowLeftRight, Send, Download } from 'lucide-react'
 import { useState } from 'react'
 
 // Sticky Bottom Navigation Bar with Glassmorphism Design
@@ -9,7 +9,7 @@ export function BottomNav() {
   const [activeButton, setActiveButton] = useState('buy')
 
   const navItems = [
-    { id: 'buy', label: 'Buy', icon: ShoppingBag },
+    { id: 'buy', label: 'Buy', icon: Coffee },
     { id: 'swap', label: 'Swap', icon: ArrowLeftRight },
     { id: 'send', label: 'Send', icon: Send },
     { id: 'receive', label: 'Receive', icon: Download },
@@ -29,6 +29,7 @@ export function BottomNav() {
             {navItems.map((item) => {
               const Icon = item.icon
               const isActive = activeButton === item.id
+              const isBuy = item.id === 'buy'
               
               return (
                 <button
@@ -37,7 +38,9 @@ export function BottomNav() {
                   className={`
                     relative flex flex-col items-center justify-center py-3 px-2 rounded-xl
                     transition-all duration-300 ease-out
-                    ${isActive 
+                    ${isActive && isBuy
+                      ? 'bg-gradient-to-t from-red-500/30 to-red-500/10 shadow-lg shadow-red-500/20' 
+                      : isActive 
                       ? 'bg-gradient-to-t from-cyber-blue/30 to-cyber-blue/10 shadow-lg shadow-cyber-blue/20' 
                       : 'hover:bg-white/5 active:scale-95'
                     }
@@ -45,14 +48,16 @@ export function BottomNav() {
                 >
                   {/* Active indicator glow */}
                   {isActive && (
-                    <div className="absolute inset-0 rounded-xl bg-cyber-blue/20 blur-xl -z-10" />
+                    <div className={`absolute inset-0 rounded-xl blur-xl -z-10 ${isBuy ? 'bg-red-500/20' : 'bg-cyber-blue/20'}`} />
                   )}
                   
                   {/* Icon */}
                   <Icon 
                     className={`
                       w-6 h-6 mb-1 transition-all duration-300
-                      ${isActive 
+                      ${isActive && isBuy
+                        ? 'text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.6)]'
+                        : isActive 
                         ? 'text-cyber-blue drop-shadow-[0_0_8px_rgba(0,230,255,0.6)]' 
                         : 'text-gray-400'
                       }
@@ -64,7 +69,9 @@ export function BottomNav() {
                   <span 
                     className={`
                       text-xs font-medium transition-all duration-300
-                      ${isActive 
+                      ${isActive && isBuy
+                        ? 'text-red-500'
+                        : isActive 
                         ? 'text-cyber-blue' 
                         : 'text-gray-400'
                       }
