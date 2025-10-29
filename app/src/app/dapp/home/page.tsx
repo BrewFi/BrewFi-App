@@ -8,12 +8,12 @@ import Image from 'next/image'
 
 export default function DAppHome() {
   return (
-    <main className="min-h-screen flex flex-col pb-28">
+    <main className="min-h-screen flex flex-col pb-32">
       <Navbar />
       
       {/* Hero Section - Split Layout */}
-      <div className="flex-1 flex flex-col justify-center px-8 py-8 max-w-7xl mx-auto w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-8">
+      <div className="flex-1 flex flex-col justify-between pt-8 px-8 pb-6 max-w-7xl mx-auto w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-6">
           
           {/* Left Side - Text Content */}
           <div className="space-y-4">
@@ -53,9 +53,9 @@ export default function DAppHome() {
           </div>
         </div>
         
-        {/* Stats Section - Moved Up */}
-        <div className="grid grid-cols-3 gap-4 lg:gap-8 mt-auto">
-          <div className="cyber-card p-4 lg:p-6">
+        {/* Stats Section - Positioned Above Bottom Nav */}
+        <div className="grid grid-cols-3 gap-4 lg:gap-8">
+          <div className="cyber-card p-4 lg:p-6 hover:scale-105 transition-transform duration-300">
             <div className="text-2xl lg:text-3xl font-bold text-cyber-blue">199</div>
             <div className="text-gray-400 text-xs lg:text-base">Active Users</div>
           </div>
@@ -65,7 +65,7 @@ export default function DAppHome() {
               <div className="text-gray-400 text-xs lg:text-base">Coffee Shops</div>
             </button>
           </a>
-          <div className="cyber-card p-4 lg:p-6">
+          <div className="cyber-card p-4 lg:p-6 hover:scale-105 transition-transform duration-300">
             <div className="text-2xl lg:text-3xl font-bold text-cyber-pink">5K+</div>
             <div className="text-gray-400 text-xs lg:text-base">$BREWFI Earned</div>
           </div>

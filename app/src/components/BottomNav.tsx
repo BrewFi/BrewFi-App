@@ -1,26 +1,31 @@
 'use client'
 
 import { Coffee, ArrowLeftRight, Send, Download } from 'lucide-react'
-import { useState } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 
 // Sticky Bottom Navigation Bar with Glassmorphism Design
 
 export function BottomNav() {
-  const [activeButton, setActiveButton] = useState('buy')
+  const router = useRouter()
+  const pathname = usePathname()
 
   const navItems = [
-    { id: 'buy', label: 'Buy', icon: Coffee },
-    { id: 'swap', label: 'Swap', icon: ArrowLeftRight },
-    { id: 'send', label: 'Send', icon: Send },
-    { id: 'receive', label: 'Receive', icon: Download },
+    { id: 'buy', label: 'Buy', icon: Coffee, path: '/dapp/buy' },
+    { id: 'swap', label: 'Swap', icon: ArrowLeftRight, path: '/dapp/swap' },
+    { id: 'send', label: 'Send', icon: Send, path: '/dapp/send' },
+    { id: 'receive', label: 'Receive', icon: Download, path: '/dapp/receive' },
   ]
+
+  const handleNavigation = (path: string) => {
+    router.push(path)
+  }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 w-full z-50 pb-safe">
-      {/* Container with max-width for desktop */}
+      {/* Container with full width */}
       <div className="w-full px-4 pb-4">
         {/* Glassmorphism Background */}
-        <div className="relative rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 shadow-2xl p-2 mx-auto max-w-2xl">
+        <div className="relative rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 shadow-2xl p-2 mx-auto w-full">
           {/* Gradient overlay */}
           <div className="absolute inset-0 rounded-2xl bg-gradient-to-t from-cyber-blue/5 to-transparent pointer-events-none" />
           
@@ -28,13 +33,13 @@ export function BottomNav() {
           <div className="relative grid grid-cols-4 gap-2">
             {navItems.map((item) => {
               const Icon = item.icon
-              const isActive = activeButton === item.id
+              const isActive = pathname === item.path
               const isBuy = item.id === 'buy'
               
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveButton(item.id)}
+                  onClick={() => handleNavigation(item.path)}
                   className={`
                     relative flex flex-col items-center justify-center py-3 px-2 rounded-xl
                     transition-all duration-300 ease-out

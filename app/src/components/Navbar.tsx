@@ -12,6 +12,7 @@ export function Navbar() {
   const isHomePage = pathname === '/'
   const isDappHome = pathname === '/dapp/home'
   const isDappSettings = pathname === '/dapp/settings'
+  const isDappFlowPage = pathname === '/dapp/buy' || pathname === '/dapp/swap' || pathname === '/dapp/send' || pathname === '/dapp/receive'
 
   return (
     <nav className="flex justify-between items-center p-6 border-b border-cyber-blue/30">
@@ -41,8 +42,8 @@ export function Navbar() {
           </a>
         )}
         
-        {/* Buy Coffee Now - hide on /dapp/home and /dapp/settings */}
-        {!isDappHome && !isDappSettings && (
+        {/* Buy Coffee Now - hide on /dapp/home, /dapp/settings, and flow pages */}
+        {!isDappHome && !isDappSettings && !isDappFlowPage && (
           <a href="/dapp/home">
             <button className="px-6 py-2 border-2 border-cyber-pink text-cyber-pink font-bold rounded-lg hover:bg-cyber-pink hover:text-black transition-all">
               Buy Coffee Now
