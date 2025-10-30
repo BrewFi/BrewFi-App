@@ -34,9 +34,10 @@ export function WalletConnect() {
                 return (
                   <button 
                     onClick={openConnectModal} 
-                    className="px-4 py-2 cyber-border rounded-lg text-sm hover:bg-cyber-blue hover:text-black transition-all"
+                    className="px-3 md:px-4 py-2 cyber-border rounded-lg text-xs md:text-sm hover:bg-cyber-blue hover:text-black transition-all whitespace-nowrap"
                   >
-                    Connect Wallet
+                    <span className="hidden sm:inline">Connect Wallet</span>
+                    <span className="sm:hidden">Connect</span>
                   </button>
                 );
               }
@@ -53,10 +54,10 @@ export function WalletConnect() {
               }
 
               return (
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
                   <button
                     onClick={openChainModal}
-                    className="px-3 py-2 cyber-border rounded-lg text-sm hover:bg-cyber-blue hover:text-black transition-all flex items-center gap-2"
+                    className="px-2 md:px-3 py-2 cyber-border rounded-lg text-xs md:text-sm hover:bg-cyber-blue hover:text-black transition-all flex items-center gap-2"
                   >
                     {chain.hasIcon && (
                       <div
@@ -77,17 +78,19 @@ export function WalletConnect() {
                         )}
                       </div>
                     )}
-                    {chain.name}
+                    <span className="hidden sm:inline">{chain.name}</span>
                   </button>
 
                   <button
                     onClick={openAccountModal}
-                    className="px-4 py-2 cyber-border rounded-lg text-sm hover:bg-cyber-blue hover:text-black transition-all"
+                    className="px-3 md:px-4 py-2 cyber-border rounded-lg text-xs md:text-sm hover:bg-cyber-blue hover:text-black transition-all max-w-[120px] sm:max-w-none truncate"
                   >
-                    {account.displayName}
-                    {account.displayBalance
-                      ? ` (${account.displayBalance})`
-                      : ''}
+                    <span className="truncate inline-block align-bottom max-w-full">
+                      {account.displayName}
+                      {account.displayBalance
+                        ? ` (${account.displayBalance})`
+                        : ''}
+                    </span>
                   </button>
                 </div>
               );
@@ -98,6 +101,3 @@ export function WalletConnect() {
     </ConnectButton.Custom>
   );
 }
-
-
-

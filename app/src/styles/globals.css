@@ -32,6 +32,20 @@
       0 0 10px #00f5ff,
       0 0 21px #00f5ff;
   }
+
+  /* Mask the SVG logo so we can color it via background-color */
+  .logo-cyber-green {
+    background-color: theme('colors.cyber.green');
+    -webkit-mask-image: url('/logo/logo.svg');
+    mask-image: url('/logo/logo.svg');
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-position: left center;
+    mask-position: left center;
+    display: block;
+  }
 }
 
 /* Custom scrollbar */
@@ -55,4 +69,3 @@
     linear-gradient(90deg, rgba(0, 245, 255, 0.05) 1px, transparent 1px);
   background-size: 50px 50px;
 }
-
