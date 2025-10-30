@@ -1,10 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Navbar } from '@/components/Navbar'
 import { BottomNav } from '@/components/BottomNav'
 import { Modal } from '@/components/ui/Modal'
 import { Coffee, ArrowLeft, Check, Plus, Minus } from 'lucide-react'
+import { useReadContract } from 'wagmi'
+import { PURCHASE_CONTRACT } from '@/config/contracts'
+import BuyWithUSDC from '@/components/blockchain/BuyWithUSDC'
 
 // Mock coffee shop data
 const coffeeShops = [
@@ -14,8 +17,8 @@ const coffeeShops = [
   { id: 4, name: 'Java Junction', location: 'West Side', address: '0xABCDEF123456...' },
 ]
 
-// Coffee menu items
-const coffeeItems = [
+// Static fallback items (used only if contract call isn't available)
+const fallbackCoffeeItems = [
   { id: 1, name: 'Coffee', price: 2.50, emoji: '☕' },
   { id: 2, name: 'Espresso', price: 3.00, emoji: '☕' },
   { id: 3, name: 'Cappuccino', price: 4.00, emoji: '🥤' },
@@ -38,6 +41,39 @@ export default function BuyPage() {
   const [amount, setAmount] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
+
+  // Fetch products from contract and show only active ones
+  const { data: productsData } = useReadContract({
+    address: PURCHASE_CONTRACT.address,
+    abi: PURCHASE_CONTRACT.abi,
+    functionName: 'getAllProducts'
+  })
+
+  // Map contract products -> UI coffee items, filter active
+  const coffeeItems = useMemo(() => {
+    const raw = Array.isArray(productsData) ? productsData : []
+
+    // Keep original index from on-chain array as productId
+    const activeWithIndex = raw
+      .map((p: any, index: number) => ({ ...p, __index: index }))
+      .filter((p: any) => p && p.active)
+
+    // priceUSD comes with 6 decimals (USDC). Convert to dollars.
+    const mapped = activeWithIndex.map((p: any) => ({
+      id: p.__index, // use the original index as the productId
+      name: typeof p.name === 'string' ? p.name : String(p.name),
+      price: Number(p.priceUSD) / 1_000_000,
+      priceUSDRaw: p.priceUSD?.toString?.() ?? String(p.priceUSD),
+      emoji: '☕'
+    }))
+
+    // If no on-chain products, use fallback (ids are local-only in this case)
+    return mapped.length > 0 ? mapped : fallbackCoffeeItems
+  }, [productsData])
+
+  const hasOnchainProducts = useMemo(() => {
+    return Array.isArray(productsData) && coffeeItems.length > 0 && 'priceUSDRaw' in coffeeItems[0]
+  }, [productsData, coffeeItems])
 
   const handleShopSelect = (shop: typeof coffeeShops[0]) => {
     setSelectedShop(shop)
@@ -172,6 +208,16 @@ export default function BuyPage() {
                       <div className="text-2xl font-bold text-cyber-blue">
                         ${coffee.price.toFixed(2)}
                       </div>
+
+                      {hasOnchainProducts && (coffee as any).priceUSDRaw && (
+                        <div className="mt-4">
+                          <BuyWithUSDC
+                            productId={coffee.id as number}
+                            priceUSD={(coffee as any).priceUSDRaw as string}
+                            onSuccess={() => setScreen('success')}
+                          />
+                        </div>
+                      )}
 
                       {isSelected && orderItem && (
                         <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-cyber-blue/30">
@@ -336,4 +382,3 @@ export default function BuyPage() {
     </main>
   )
 }
-

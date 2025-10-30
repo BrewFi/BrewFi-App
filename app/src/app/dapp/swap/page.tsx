@@ -10,7 +10,7 @@ import { ArrowLeftRight, Check } from 'lucide-react'
 const tokens = [
   { id: 'BREWFI', name: '$BREWFI', balance: 1250 },
   { id: 'USDC', name: 'USDC', balance: 500 },
-  { id: 'SOL', name: 'SOL', balance: 2.5 },
+  { id: 'AVAX', name: 'AVAX', balance: 2.5 },
 ]
 
 export default function SwapPage() {
@@ -200,4 +200,3 @@ export default function SwapPage() {
     </main>
   )
 }
-

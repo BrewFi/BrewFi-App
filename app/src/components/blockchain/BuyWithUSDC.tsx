@@ -72,8 +72,12 @@ export default function BuyWithUSDC({ productId, priceUSD, onSuccess }: BuyWithU
     hash: purchaseHash,
   });
 
+  // Narrow read results to bigint
+  const allowanceBig = typeof allowance === 'bigint' ? allowance : undefined;
+  const usdcBalanceBig = typeof usdcBalance === 'bigint' ? usdcBalance : undefined;
+
   // Check if approval is needed
-  const needsApproval = allowance !== undefined && allowance < priceAmount;
+  const needsApproval = allowanceBig !== undefined && allowanceBig < priceAmount;
 
   // Handle approval flow - trigger purchase automatically after approval
   useEffect(() => {
@@ -166,7 +170,7 @@ export default function BuyWithUSDC({ productId, priceUSD, onSuccess }: BuyWithU
   };
 
   // Check if user has enough balance
-  const hasEnoughBalance = usdcBalance !== undefined && usdcBalance >= priceAmount;
+  const hasEnoughBalance = usdcBalanceBig !== undefined && usdcBalanceBig >= priceAmount;
 
   // Determine button text and state
   const getButtonText = () => {
@@ -195,12 +199,12 @@ export default function BuyWithUSDC({ productId, priceUSD, onSuccess }: BuyWithU
   return (
     <div className="space-y-4">
       {/* USDC Balance Display */}
-      {isConnected && usdcBalance !== undefined && (
+      {isConnected && usdcBalanceBig !== undefined && (
         <div className="bg-neutral-800/50 rounded-lg p-3 border border-neutral-700">
           <div className="flex justify-between items-center text-sm">
             <span className="text-gray-400">Your USDC Balance:</span>
             <span className="text-white font-semibold">
-              {(Number(usdcBalance) / 1e6).toFixed(2)} USDC
+              {(Number(usdcBalanceBig) / 1e6).toFixed(2)} USDC
             </span>
           </div>
           <div className="flex justify-between items-center text-sm mt-1">

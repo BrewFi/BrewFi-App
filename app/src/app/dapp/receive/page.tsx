@@ -9,7 +9,7 @@ import { Copy, Check } from 'lucide-react'
 const tokens = [
   { id: 'BREWFI', name: '$BREWFI', address: '0x51B2C3D4E5F6789012345678901234567891EB4' },
   { id: 'USDC', name: 'USDC', address: '0x51B2C3D4E5F6789012345678901234567891EB4' },
-  { id: 'SOL', name: 'SOL', address: '0x51B2C3D4E5F6789012345678901234567891EB4' },
+  { id: 'AVAX', name: 'AVAX', address: '0x51B2C3D4E5F6789012345678901234567891EB4' },
 ]
 
 export default function ReceivePage() {
@@ -133,4 +133,3 @@ export default function ReceivePage() {
     </main>
   )
 }
-
