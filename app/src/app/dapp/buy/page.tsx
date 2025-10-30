@@ -5,8 +5,8 @@ import { Navbar } from '@/components/Navbar'
 import { BottomNav } from '@/components/BottomNav'
 import { Modal } from '@/components/ui/Modal'
 import { Coffee, ArrowLeft, Check, Plus, Minus } from 'lucide-react'
-import { useReadContract } from 'wagmi'
-import { PURCHASE_CONTRACT } from '@/config/contracts'
+import { useAccount, useReadContract, useWriteContract, usePublicClient } from 'wagmi'
+import { PURCHASE_CONTRACT, USDC_CONTRACT } from '@/config/contracts'
 import BuyWithUSDC from '@/components/blockchain/BuyWithUSDC'
 
 // Mock coffee shop data
@@ -42,11 +42,31 @@ export default function BuyPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
 
+  const { address } = useAccount()
+  const { writeContractAsync } = useWriteContract()
+  const publicClient = usePublicClient()
+
   // Fetch products from contract and show only active ones
   const { data: productsData } = useReadContract({
     address: PURCHASE_CONTRACT.address,
     abi: PURCHASE_CONTRACT.abi,
     functionName: 'getAllProducts'
+  })
+
+  // User USDC balance
+  const { data: usdcBalanceData } = useReadContract({
+    address: USDC_CONTRACT.address,
+    abi: USDC_CONTRACT.abi,
+    functionName: 'balanceOf',
+    args: [address ?? '0x0000000000000000000000000000000000000000']
+  })
+
+  // Allowance for PURCHASE_CONTRACT
+  const { data: allowanceData, refetch: refetchAllowance } = useReadContract({
+    address: USDC_CONTRACT.address,
+    abi: USDC_CONTRACT.abi,
+    functionName: 'allowance',
+    args: address ? [address, PURCHASE_CONTRACT.address] : undefined
   })
 
   // Map contract products -> UI coffee items, filter active
@@ -64,6 +84,7 @@ export default function BuyPage() {
       name: typeof p.name === 'string' ? p.name : String(p.name),
       price: Number(p.priceUSD) / 1_000_000,
       priceUSDRaw: p.priceUSD?.toString?.() ?? String(p.priceUSD),
+      rewardRatioRaw: p.rewardRatio?.toString?.() ?? String(p.rewardRatio),
       emoji: '☕'
     }))
 
@@ -75,12 +96,25 @@ export default function BuyPage() {
     return Array.isArray(productsData) && coffeeItems.length > 0 && 'priceUSDRaw' in coffeeItems[0]
   }, [productsData, coffeeItems])
 
+  const usdcBalanceDollars = useMemo(() => {
+    const raw = usdcBalanceData as any
+    const asStr = raw?.toString?.() ?? '0'
+    const num = Number(asStr)
+    if (!Number.isFinite(num)) return 0
+    return num / 1_000_000
+  }, [usdcBalanceData])
+
   const handleShopSelect = (shop: typeof coffeeShops[0]) => {
     setSelectedShop(shop)
     setScreen('menu')
   }
 
   const handleCoffeeSelect = (coffee: typeof coffeeItems[0]) => {
+    const currentTotal = getTotalAmount()
+    const nextTotal = currentTotal + coffee.price
+    if (nextTotal > usdcBalanceDollars) {
+      return
+    }
     setOrderItems(prev => {
       const existing = prev.find(item => item.id === coffee.id)
       if (existing) {
@@ -96,9 +130,21 @@ export default function BuyPage() {
 
   const handleQuantityChange = (coffeeId: number, delta: number) => {
     setOrderItems(prev => {
+      const target = prev.find(i => i.id === coffeeId)
+      if (!target) return prev
+      const proposedQty = Math.max(0, target.quantity + delta)
+      // If increasing, ensure affordability
+      if (delta > 0) {
+        const currentTotal = getTotalAmount()
+        const extraUnits = proposedQty - target.quantity
+        const nextTotal = currentTotal + target.price * extraUnits
+        if (nextTotal > usdcBalanceDollars) {
+          return prev
+        }
+      }
       const updated = prev.map(item => 
         item.id === coffeeId 
-          ? { ...item, quantity: Math.max(0, item.quantity + delta) }
+          ? { ...item, quantity: proposedQty }
           : item
       )
       return updated.filter(item => item.quantity > 0)
@@ -109,12 +155,69 @@ export default function BuyPage() {
     return orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
   }
 
+  const getTotalAmountUSDRaw = () => {
+    // Sum of priceUSDRaw (1e6) * quantity as BigInt; only valid when on-chain products are loaded
+    try {
+      let total = 0n
+      for (const item of orderItems) {
+        const raw = BigInt((item as any).priceUSDRaw ?? '0')
+        total += raw * BigInt(item.quantity)
+      }
+      return total
+    } catch {
+      return 0n
+    }
+  }
+
   const handleConfirmPurchase = async () => {
-    setIsProcessing(true)
-    // Simulate blockchain transaction
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setIsProcessing(false)
-    setScreen('success')
+    if (!address || orderItems.length === 0) return
+    if (!hasOnchainProducts) return
+    try {
+      setIsProcessing(true)
+
+      // Compute total required USDC (1e6)
+      const totalUSDC = getTotalAmountUSDRaw()
+
+      // Ensure allowance
+      const currentAllowance = BigInt((allowanceData as any)?.toString?.() ?? '0')
+      if (currentAllowance < totalUSDC) {
+        const approveHash = await writeContractAsync({
+          address: USDC_CONTRACT.address,
+          abi: USDC_CONTRACT.abi,
+          functionName: 'approve',
+          args: [PURCHASE_CONTRACT.address, totalUSDC]
+        })
+        if (publicClient && approveHash) {
+          await publicClient.waitForTransactionReceipt({ hash: approveHash as `0x${string}` })
+        }
+        await refetchAllowance()
+      }
+
+      // Build the productIds list repeated by quantity
+      const productIds: number[] = []
+      orderItems.forEach(item => {
+        for (let i = 0; i < item.quantity; i++) productIds.push(item.id)
+      })
+
+      // Sequentially execute purchases
+      for (const pid of productIds) {
+        const txHash = await writeContractAsync({
+          address: PURCHASE_CONTRACT.address,
+          abi: PURCHASE_CONTRACT.abi,
+          functionName: 'purchaseWithUSDC',
+          args: [BigInt(pid)]
+        })
+        if (publicClient && txHash) {
+          await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}` })
+        }
+      }
+
+      setScreen('success')
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   const handleCloseSuccess = () => {
@@ -132,6 +235,32 @@ export default function BuyPage() {
       setScreen('menu')
       setAmount('')
     }
+  }
+
+  // Calculate on-chain-equivalent BREWFI reward per item
+  const calculateBrewfiReward = (priceUSDRaw: string, rewardRatioRaw: string) => {
+    try {
+      const USD_1E12 = 1_000_000_000_000n // 1e12
+      const ONE_18 = 1_000_000_000_000_000_000n // 1e18
+      const price = BigInt(priceUSDRaw)
+      const ratio = BigInt(rewardRatioRaw)
+      // (priceUSD * 1e12 * rewardRatio) / 1e18
+      const wei = (price * USD_1E12 * ratio) / ONE_18
+      return wei
+    } catch {
+      return 0n
+    }
+  }
+
+  const formatTokenAmount = (amountWei: bigint, decimals: number = 18, fractionDigits: number = 2) => {
+    const base = 10n ** BigInt(decimals)
+    const whole = amountWei / base
+    const fraction = amountWei % base
+    if (fractionDigits === 0) return whole.toString()
+    const fracStr = (fraction + 10n ** BigInt(decimals)).toString().slice(1).padStart(decimals, '0').slice(0, fractionDigits)
+    // Trim trailing zeros
+    const trimmedFrac = fracStr.replace(/0+$/g, '')
+    return trimmedFrac ? `${whole.toString()}.${trimmedFrac}` : whole.toString()
   }
 
   return (
@@ -191,31 +320,60 @@ export default function BuyPage() {
               {coffeeItems.map(coffee => {
                 const orderItem = orderItems.find(item => item.id === coffee.id)
                 const isSelected = !!orderItem
+                const remainingBudget = usdcBalanceDollars - getTotalAmount()
+                const canAddOne = remainingBudget >= coffee.price
 
                 return (
                   <div
                     key={coffee.id}
-                    className={`cyber-card p-6 transition-all duration-300 cursor-pointer hover:scale-[1.02] ${
+                    className={`cyber-card p-6 transition-all duration-300 relative ${
                       isSelected 
                         ? 'border-cyber-blue bg-cyber-blue/10 shadow-lg shadow-cyber-blue/30' 
                         : 'hover:border-cyber-blue/50 hover:shadow-lg hover:shadow-cyber-blue/20'
-                    }`}
-                    onClick={() => !isSelected && handleCoffeeSelect(coffee)}
+                    } ${canAddOne ? 'cursor-pointer hover:scale-[1.02]' : 'cursor-not-allowed opacity-60'}`}
+                    onClick={() => {
+                      if (!isSelected && canAddOne) handleCoffeeSelect(coffee)
+                    }}
                   >
+                    {hasOnchainProducts && (coffee as any).priceUSDRaw && (coffee as any).rewardRatioRaw && (
+                      (() => {
+                        const rewardWei = calculateBrewfiReward((coffee as any).priceUSDRaw as string, (coffee as any).rewardRatioRaw as string)
+                        const rewardDisplay = formatTokenAmount(rewardWei, 18, 2)
+                        return (
+                          <div className="absolute top-3 right-3">
+                            <span className="px-3 py-1 rounded-full bg-gradient-to-r from-cyber-blue to-emerald-400 text-black text-xs font-extrabold shadow-[0_0_15px_rgba(0,245,255,0.4)]">
+                              + {rewardDisplay} BREWFI
+                            </span>
+                          </div>
+                        )
+                      })()
+                    )}
                     <div className="text-center space-y-3">
                       <div className="text-5xl">{coffee.emoji}</div>
                       <h3 className="text-xl font-bold text-white">{coffee.name}</h3>
                       <div className="text-2xl font-bold text-cyber-blue">
                         ${coffee.price.toFixed(2)}
                       </div>
+                      {!canAddOne && (
+                        <div className="text-xs text-red-400 font-semibold">Insufficient USDC balance</div>
+                      )}
 
                       {hasOnchainProducts && (coffee as any).priceUSDRaw && (
                         <div className="mt-4">
-                          <BuyWithUSDC
-                            productId={coffee.id as number}
-                            priceUSD={(coffee as any).priceUSDRaw as string}
-                            onSuccess={() => setScreen('success')}
-                          />
+                          {canAddOne ? (
+                            <BuyWithUSDC
+                              productId={coffee.id as number}
+                              priceUSD={(coffee as any).priceUSDRaw as string}
+                              onSuccess={() => setScreen('success')}
+                            />
+                          ) : (
+                            <button
+                              disabled
+                              className="w-full bg-gray-800 text-gray-400 font-bold py-3 rounded-lg border border-gray-700 cursor-not-allowed"
+                            >
+                              Insufficient USDC
+                            </button>
+                          )}
                         </div>
                       )}
 
@@ -238,9 +396,9 @@ export default function BuyPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation()
-                              handleQuantityChange(coffee.id, 1)
+                              if (canAddOne) handleQuantityChange(coffee.id, 1)
                             }}
-                            className="w-10 h-10 rounded-full bg-cyber-blue/20 border border-cyber-blue hover:bg-cyber-blue/30 transition-all flex items-center justify-center"
+                            className={`w-10 h-10 rounded-full border transition-all flex items-center justify-center ${canAddOne ? 'bg-cyber-blue/20 border-cyber-blue hover:bg-cyber-blue/30' : 'bg-gray-800 border-gray-700 cursor-not-allowed'}`}
                           >
                             <Plus className="w-5 h-5 text-cyber-blue" />
                           </button>
