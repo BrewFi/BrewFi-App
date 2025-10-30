@@ -16,6 +16,8 @@ export default function BuyWithUSDC({ productId, priceUSD, onSuccess }: BuyWithU
   const { address, isConnected } = useAccount();
   const [step, setStep] = useState<TransactionStep>("idle");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const [errorDetails, setErrorDetails] = useState<string>("");
+  const [showErrorDetails, setShowErrorDetails] = useState<boolean>(false);
 
   // Convert price to BigInt (priceUSD is in USDC format, 6 decimals)
   const priceAmount = BigInt(priceUSD);
@@ -113,7 +115,11 @@ export default function BuyWithUSDC({ productId, priceUSD, onSuccess }: BuyWithU
     const error = approveError || approveReceiptError || purchaseError || purchaseReceiptError;
     if (error) {
       setStep("error");
-      setErrorMessage(error.message || "Transaction failed. Please try again.");
+      const rawMessage = (error as any)?.shortMessage || (error as any)?.message || String(error);
+      const summary = summarizeErrorMessage(rawMessage);
+      setErrorMessage(summary);
+      setErrorDetails(rawMessage);
+      setShowErrorDetails(false);
     }
   }, [approveError, approveReceiptError, purchaseError, purchaseReceiptError]);
 
@@ -196,6 +202,20 @@ export default function BuyWithUSDC({ productId, priceUSD, onSuccess }: BuyWithU
     isPurchaseConfirming ||
     step === "success";
 
+  function summarizeErrorMessage(message: string): string {
+    const msg = message || "";
+    const lower = msg.toLowerCase();
+    if (lower.includes("user rejected")) return "You rejected the request in your wallet.";
+    if (lower.includes("insufficient funds")) return "Insufficient funds for gas or token balance.";
+    if (lower.includes("insufficient allowance")) return "Insufficient allowance. Please approve USDC first.";
+    if (lower.includes("nonce")) return "Nonce issue. Try again or reset your wallet nonce.";
+    if (lower.includes("replacement transaction underpriced")) return "Replacement transaction underpriced. Increase gas and retry.";
+    if (lower.includes("execution reverted")) return "Transaction reverted by contract.";
+    if (lower.includes("call exception") || lower.includes("contract call")) return "Contract call failed. Please retry.";
+    if (lower.includes("network")) return "Network error. Check your connection and chain selection.";
+    return "Transaction failed. Please try again.";
+  }
+
   return (
     <div className="space-y-4">
       {/* USDC Balance Display */}
@@ -253,11 +273,27 @@ export default function BuyWithUSDC({ productId, priceUSD, onSuccess }: BuyWithU
       {/* Error Message */}
       {step === "error" && errorMessage && (
         <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-red-500" />
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
             <div className="flex-1">
-              <div className="text-white font-semibold">Transaction Failed</div>
-              <div className="text-red-400 text-sm">{errorMessage}</div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-white font-semibold">Transaction Failed</div>
+                {errorDetails && (
+                  <button
+                    type="button"
+                    onClick={() => setShowErrorDetails(v => !v)}
+                    className="text-xs text-red-300/80 hover:text-red-200 underline-offset-2 hover:underline"
+                  >
+                    {showErrorDetails ? "Hide details" : "Show details"}
+                  </button>
+                )}
+              </div>
+              <div className="text-red-300 text-sm mt-1">{errorMessage}</div>
+              {showErrorDetails && errorDetails && (
+                <pre className="mt-3 text-xs text-red-200/80 bg-black/30 border border-red-500/20 rounded-md p-3 overflow-auto max-h-40 whitespace-pre-wrap">
+{errorDetails}
+                </pre>
+              )}
             </div>
           </div>
         </div>
