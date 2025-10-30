@@ -1,7 +1,6 @@
 'use client'
 
 import { Navbar } from '@/components/Navbar'
-import Image from 'next/image'
 
 // Landing page - Connect wallet and enter app
 
@@ -15,15 +14,8 @@ export default function Home() {
           
           {/* Left Side - Text Content */}
           <div className="space-y-4 lg:space-y-6">
-            <h1 className="text-6xl lg:text-8xl font-bold flex items-center gap-4 lg:gap-6">
-              <Image 
-                src="/images/brewficoin.png" 
-                alt="BrewFi Coin" 
-                width={240} 
-                height={240}
-                className="w-48 h-48 lg:w-60 lg:h-60 rounded-full"
-              />
-              <span className="neon-text">BrewFi</span>
+            <h1 className="text-6xl lg:text-8xl font-bold neon-text">
+              BrewFi
             </h1>
             
             <p className="text-3xl lg:text-4xl text-cyan-400 coffee-glow font-semibold">

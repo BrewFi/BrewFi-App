@@ -2,7 +2,6 @@
 
 import { Navbar } from '@/components/Navbar'
 import { BottomNav } from '@/components/BottomNav'
-import Image from 'next/image'
 
 // DApp Home page - Connect wallet and enter app
 
@@ -16,19 +15,12 @@ export default function DAppHome() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center mb-6">
           
           {/* Left Side - Text Content */}
-          <div className="space-y-4">
-            <h1 className="text-6xl lg:text-7xl font-bold flex items-center gap-4">
-              <Image 
-                src="/images/brewficoin.png" 
-                alt="BrewFi Coin" 
-                width={280} 
-                height={280}
-                className="w-56 h-56 lg:w-[280px] lg:h-[280px] rounded-full"
-              />
-              <span className="neon-text">BrewFi</span>
+          <div className="space-y-6">
+            <h1 className="text-6xl lg:text-8xl font-bold neon-text">
+              BrewFi
             </h1>
             
-            <p className="text-3xl text-cyan-400 coffee-glow font-semibold">
+            <p className="text-3xl lg:text-4xl text-cyan-400 coffee-glow font-semibold">
               Drink. Earn. Connect.
             </p>
             

@@ -1,0 +1,304 @@
+[
+  {
+    "inputs": [
+      {"internalType": "address", "name": "_brewfiToken", "type": "address"},
+      {"internalType": "address", "name": "_usdcToken", "type": "address"},
+      {"internalType": "address", "name": "_avaxUsdPriceFeed", "type": "address"},
+      {"internalType": "address", "name": "_owner", "type": "address"}
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "address", "name": "token", "type": "address"},
+      {"indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256"}
+    ],
+    "name": "ContractFunded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "address", "name": "token", "type": "address"},
+      {"indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256"}
+    ],
+    "name": "FundsWithdrawn",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "address", "name": "previousOwner", "type": "address"},
+      {"indexed": true, "internalType": "address", "name": "newOwner", "type": "address"}
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "uint256", "name": "productId", "type": "uint256"},
+      {"indexed": false, "internalType": "string", "name": "name", "type": "string"},
+      {"indexed": false, "internalType": "uint256", "name": "priceUSD", "type": "uint256"},
+      {"indexed": false, "internalType": "uint256", "name": "rewardRatio", "type": "uint256"}
+    ],
+    "name": "ProductAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "uint256", "name": "productId", "type": "uint256"},
+      {"indexed": false, "internalType": "string", "name": "name", "type": "string"},
+      {"indexed": false, "internalType": "uint256", "name": "priceUSD", "type": "uint256"},
+      {"indexed": false, "internalType": "uint256", "name": "rewardRatio", "type": "uint256"}
+    ],
+    "name": "ProductUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "address", "name": "buyer", "type": "address"},
+      {"indexed": true, "internalType": "uint256", "name": "productId", "type": "uint256"},
+      {"indexed": false, "internalType": "uint256", "name": "avaxAmount", "type": "uint256"},
+      {"indexed": false, "internalType": "uint256", "name": "brewfiReward", "type": "uint256"}
+    ],
+    "name": "PurchaseWithAVAX",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true, "internalType": "address", "name": "buyer", "type": "address"},
+      {"indexed": true, "internalType": "uint256", "name": "productId", "type": "uint256"},
+      {"indexed": false, "internalType": "uint256", "name": "usdcAmount", "type": "uint256"},
+      {"indexed": false, "internalType": "uint256", "name": "brewfiReward", "type": "uint256"}
+    ],
+    "name": "PurchaseWithUSDC",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {"internalType": "string", "name": "name", "type": "string"},
+      {"internalType": "uint256", "name": "priceUSD", "type": "uint256"},
+      {"internalType": "uint256", "name": "rewardRatio", "type": "uint256"}
+    ],
+    "name": "addProduct",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "avaxUsdPriceFeed",
+    "outputs": [{"internalType": "contract AggregatorV3Interface", "name": "", "type": "address"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "brewfiToken",
+    "outputs": [{"internalType": "contract IERC20", "name": "", "type": "address"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "priceUSD", "type": "uint256"},
+      {"internalType": "uint256", "name": "rewardRatio", "type": "uint256"}
+    ],
+    "name": "calculateBrewfiReward",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "amount", "type": "uint256"}
+    ],
+    "name": "fundContract",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getAllProducts",
+    "outputs": [
+      {
+        "components": [
+          {"internalType": "string", "name": "name", "type": "string"},
+          {"internalType": "uint256", "name": "priceUSD", "type": "uint256"},
+          {"internalType": "uint256", "name": "rewardRatio", "type": "uint256"},
+          {"internalType": "bool", "name": "active", "type": "bool"}
+        ],
+        "internalType": "struct BrewFiPurchase.Product[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getAvaxUsdPrice",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getBalances",
+    "outputs": [
+      {"internalType": "uint256", "name": "brewfiBalance", "type": "uint256"},
+      {"internalType": "uint256", "name": "usdcBalance", "type": "uint256"},
+      {"internalType": "uint256", "name": "avaxBalance", "type": "uint256"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "productId", "type": "uint256"}
+    ],
+    "name": "getProduct",
+    "outputs": [
+      {
+        "components": [
+          {"internalType": "string", "name": "name", "type": "string"},
+          {"internalType": "uint256", "name": "priceUSD", "type": "uint256"},
+          {"internalType": "uint256", "name": "rewardRatio", "type": "uint256"},
+          {"internalType": "bool", "name": "active", "type": "bool"}
+        ],
+        "internalType": "struct BrewFiPurchase.Product",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getProductCount",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "", "type": "uint256"}
+    ],
+    "name": "products",
+    "outputs": [
+      {"internalType": "string", "name": "name", "type": "string"},
+      {"internalType": "uint256", "name": "priceUSD", "type": "uint256"},
+      {"internalType": "uint256", "name": "rewardRatio", "type": "uint256"},
+      {"internalType": "bool", "name": "active", "type": "bool"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "productId", "type": "uint256"}
+    ],
+    "name": "purchaseWithAVAX",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "productId", "type": "uint256"}
+    ],
+    "name": "purchaseWithUSDC",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "productId", "type": "uint256"}
+    ],
+    "name": "toggleProduct",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "address", "name": "newOwner", "type": "address"}
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "usdcToken",
+    "outputs": [{"internalType": "contract IERC20", "name": "", "type": "address"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "productId", "type": "uint256"},
+      {"internalType": "string", "name": "name", "type": "string"},
+      {"internalType": "uint256", "name": "priceUSD", "type": "uint256"},
+      {"internalType": "uint256", "name": "rewardRatio", "type": "uint256"}
+    ],
+    "name": "updateProduct",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "amount", "type": "uint256"}
+    ],
+    "name": "withdrawAVAX",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "withdrawAllAVAX",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "amount", "type": "uint256"}
+    ],
+    "name": "withdrawUSDC",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "stateMutability": "payable",
+    "type": "receive"
+  }
+]

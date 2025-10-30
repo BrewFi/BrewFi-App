@@ -17,16 +17,16 @@ export function Navbar() {
   return (
     <nav className="flex justify-between items-center p-6 border-b border-cyber-blue/30">
       <div className="flex items-center space-x-8">
-        <div className="flex items-center gap-3">
+        <a href="/" className="flex items-center">
           <Image 
-            src="/images/brewficoin.png" 
-            alt="BrewFi Coin" 
-            width={40} 
-            height={40}
-            className="rounded-full"
+            src="/logo/logo.svg" 
+            alt="BrewFi Logo" 
+            width={180} 
+            height={50}
+            className="h-12 w-auto"
+            priority
           />
-          <h1 className="text-2xl font-bold neon-text">BrewFi</h1>
-        </div>
+        </a>
       </div>
       
       <div className="flex gap-4 items-center">
