@@ -38,9 +38,9 @@ export function Navbar() {
           </a>
         )}
         
-        {/* Buy Coffee Now - hide on /dapp/home, /dapp/settings, and flow pages */}
+        {/* Buy Coffee Now - show on all sizes except on /dapp/home, /dapp/settings, and flow pages */}
         {!isDappHome && !isDappSettings && !isDappFlowPage && (
-          <a href="/dapp/home" className="hidden sm:block">
+          <a href="/dapp/home" className="block">
             <button className="px-4 md:px-6 py-2 border-2 border-cyber-pink text-cyber-pink font-bold rounded-lg hover:bg-cyber-pink hover:text-black transition-all text-sm md:text-base">
               Buy Coffee Now
             </button>
