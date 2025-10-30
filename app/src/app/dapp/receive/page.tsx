@@ -1,23 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Navbar } from '@/components/Navbar'
 import { BottomNav } from '@/components/BottomNav'
 import { Copy, Check } from 'lucide-react'
+import { useAccount, useChainId } from 'wagmi'
+import { QRCode } from '@/components/QRCode'
 
-// Mock token data
 const tokens = [
-  { id: 'BREWFI', name: '$BREWFI', address: '0x51B2C3D4E5F6789012345678901234567891EB4' },
-  { id: 'USDC', name: 'USDC', address: '0x51B2C3D4E5F6789012345678901234567891EB4' },
-  { id: 'AVAX', name: 'AVAX', address: '0x51B2C3D4E5F6789012345678901234567891EB4' },
+  { id: 'BREWFI', name: '$BREWFI' },
+  { id: 'USDC', name: 'USDC' },
+  { id: 'AVAX', name: 'AVAX' },
 ]
 
 export default function ReceivePage() {
+  const { address } = useAccount()
+  const chainId = useChainId()
   const [selectedToken, setSelectedToken] = useState(tokens[0])
   const [copied, setCopied] = useState(false)
 
+  const receiveAddress = useMemo(() => address || '—', [address])
+
   const handleCopyAddress = async () => {
-    await navigator.clipboard.writeText(selectedToken.address)
+    if (!address) return
+    await navigator.clipboard.writeText(address)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -56,24 +62,14 @@ export default function ReceivePage() {
           <div className="cyber-card p-8 space-y-6">
             {/* QR Code Placeholder */}
             <div className="space-y-4">
-              <div className="relative mx-auto w-64 h-64 rounded-2xl overflow-hidden border-4 border-cyber-blue shadow-lg shadow-cyber-blue/50">
-                {/* Gradient QR Code Placeholder */}
-                <div className="w-full h-full bg-gradient-to-br from-green-500 via-pink-500 to-purple-500 flex items-center justify-center">
-                  <div className="grid grid-cols-8 gap-1 p-4">
-                    {Array.from({ length: 64 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className={`w-3 h-3 ${
-                          Math.random() > 0.5 ? 'bg-black' : 'bg-white'
-                        } rounded-sm`}
-                      />
-                    ))}
-                  </div>
-                </div>
+              <div className="relative mx-auto w-64 h-64 rounded-2xl overflow-hidden border-4 border-cyber-blue shadow-lg shadow-cyber-blue/50 bg-white flex items-center justify-center p-4">
+                {address ? (
+                  <QRCode value={address} />
+                ) : (
+                  <div className="text-gray-500 text-sm">Connect wallet to show QR</div>
+                )}
               </div>
-              <div className="text-center text-gray-400 font-semibold">
-                QR Code
-              </div>
+              <div className="text-center text-gray-400 font-semibold">QR Code</div>
             </div>
 
             {/* Wallet Address */}
@@ -82,7 +78,7 @@ export default function ReceivePage() {
               <div className="relative">
                 <input
                   type="text"
-                  value={selectedToken.address}
+                  value={receiveAddress}
                   readOnly
                   className="w-full bg-black/50 border border-cyber-blue/30 rounded-lg px-4 py-3 pr-12 text-white text-sm focus:border-cyber-blue focus:outline-none"
                 />
@@ -98,6 +94,7 @@ export default function ReceivePage() {
                   )}
                 </button>
               </div>
+              <div className="text-xs text-gray-500">Chain ID: {chainId}</div>
               {copied && (
                 <div className="text-center text-cyber-blue text-sm font-semibold">
                   ✓ Address copied to clipboard!
