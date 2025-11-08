@@ -20,11 +20,10 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/logo/logo.png', sizes: '32x32', type: 'image/png' },
-      { url: '/logo/BREWFI_2_GREEN.svg', type: 'image/svg+xml' },
+      { url: '/logo/BREWFI_2_GREEN_BG.svg', type: 'image/svg+xml' },
     ],
     apple: [
-      { url: '/logo/logo.png', sizes: '180x180', type: 'image/png' },
+      { url: '/logo/BREWFI_2_GREEN_BG.svg', sizes: '180x180', type: 'image/svg+xml' },
     ],
   },
   other: {
