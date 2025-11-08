@@ -59,10 +59,13 @@ export default function DAppSettings() {
             <h3 className="text-xl font-bold">Account</h3>
           </div>
           <div className="space-y-3 pl-9">
-            <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-white/5 transition-all">
+            <Link
+              href="/settings/profile"
+              className="block w-full text-left py-3 px-4 rounded-lg hover:bg-white/5 transition-all"
+            >
               <div className="font-medium">Profile Information</div>
               <div className="text-sm text-gray-400">Update your personal details</div>
-            </button>
+            </Link>
             <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-white/5 transition-all">
               <div className="font-medium">Email & Password</div>
               <div className="text-sm text-gray-400">Change your login credentials</div>

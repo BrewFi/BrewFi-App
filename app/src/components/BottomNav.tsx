@@ -1,6 +1,6 @@
 'use client'
 
-import { Coffee, ArrowLeftRight, Send, Download, QrCode } from 'lucide-react'
+import { Coffee, Settings, Send, Download, QrCode } from 'lucide-react'
 import { useRouter, usePathname } from 'next/navigation'
 
 // Sticky Bottom Navigation Bar with Glassmorphism Design
@@ -11,9 +11,9 @@ export function BottomNav() {
 
   const navItems = [
     { id: 'buy', label: 'Buy', icon: Coffee, path: '/buy' },
-    { id: 'swap', label: 'Swap', icon: ArrowLeftRight, path: '/swap' },
-    { id: 'send', label: 'Send', icon: Send, path: '/send' },
     { id: 'receive', label: 'Receive', icon: Download, path: '/receive' },
+    { id: 'send', label: 'Send', icon: Send, path: '/send' },
+    { id: 'settings', label: 'Setting', icon: Settings, path: '/settings' },
   ]
 
   const handleNavigation = (path: string) => {
@@ -33,7 +33,7 @@ export function BottomNav() {
           
           {/* Navigation Buttons with Center QR Button */}
           <div className="relative flex items-center justify-between px-1">
-            {/* Left side - Buy and Swap */}
+            {/* Left side - Buy and Receive */}
             <div className="flex gap-2 flex-1">
               {navItems.slice(0, 2).map((item) => {
                 const Icon = item.icon
@@ -126,7 +126,7 @@ export function BottomNav() {
               </button>
             </div>
 
-            {/* Right side - Send and Receive */}
+            {/* Right side - Send and Setting */}
             <div className="flex gap-2 flex-1">
               {navItems.slice(2, 4).map((item) => {
                 const Icon = item.icon

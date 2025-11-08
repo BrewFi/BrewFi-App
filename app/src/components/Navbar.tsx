@@ -13,7 +13,7 @@ export function Navbar() {
   const isHomePage = pathname === '/'
   const isDappHome = pathname === '/home'
   const isDappSettings = pathname === '/settings'
-  const isDappFlowPage = pathname === '/buy' || pathname === '/swap' || pathname === '/send' || pathname === '/receive'
+  const isDappFlowPage = pathname === '/buy' || pathname === '/send' || pathname === '/receive'
   
   const { user } = useSupabaseAuth()
   const { primaryAccount } = useInvisibleWallet()
