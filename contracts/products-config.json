@@ -2,32 +2,32 @@
   "products": [
     {
       "name": "Coffee",
-      "priceUSD": "5000000",
+      "priceUSD": "1000000",
       "rewardRatio": "1000000000000000000"
     },
     {
       "name": "Espresso",
-      "priceUSD": "3000000",
+      "priceUSD": "1500000",
       "rewardRatio": "1000000000000000000"
     },
     {
       "name": "Latte",
-      "priceUSD": "6000000",
+      "priceUSD": "3000000",
       "rewardRatio": "1200000000000000000"
     },
     {
       "name": "Cappuccino",
-      "priceUSD": "5500000",
+      "priceUSD": "2750000",
       "rewardRatio": "1100000000000000000"
     },
     {
       "name": "Americano",
-      "priceUSD": "4000000",
+      "priceUSD": "2000000",
       "rewardRatio": "1000000000000000000"
     },
     {
       "name": "Mocha",
-      "priceUSD": "7000000",
+      "priceUSD": "3500000",
       "rewardRatio": "1500000000000000000"
     }
   ],

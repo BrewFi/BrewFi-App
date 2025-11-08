@@ -24,6 +24,7 @@ async function main() {
 
     // Fuji testnet addresses (same as deployment)
     const USDC_ADDRESS = "0x5425890298aed601595a70AB815c96711a31Bc65";
+    const USDT_ADDRESS = "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7"; // USDT on Fuji
     const AVAX_USD_PRICE_FEED = "0x5498BB86BC934c8D34FDA08E81D444153d0D06aD";
     const BREWFI_TOKEN_ADDRESS = "0x9a13d88490e21809Fac732C18ff13EB4849e4630";
 
@@ -31,10 +32,13 @@ async function main() {
     const deploymentFile = path.join(deploymentsDir, latestDeployment.purchaseContract.deploymentFile);
     const deploymentInfo = JSON.parse(fs.readFileSync(deploymentFile, "utf8"));
     const deployerAddress = deploymentInfo.deployer;
+    // Use USDT address from deployment info if available, otherwise use constant
+    const usdtAddress = deploymentInfo.usdtTokenAddress || USDT_ADDRESS;
 
     console.log("🏦 Contract Addresses:");
     console.log("   BREWFI Token:", BREWFI_TOKEN_ADDRESS);
     console.log("   USDC Token:", USDC_ADDRESS);
+    console.log("   USDT Token:", usdtAddress);
     console.log("   AVAX/USD Price Feed:", AVAX_USD_PRICE_FEED);
     console.log("   Deployer:", deployerAddress);
 
@@ -49,6 +53,7 @@ async function main() {
                 constructorArguments: [
                     BREWFI_TOKEN_ADDRESS,    // _brewfiToken
                     USDC_ADDRESS,            // _usdcToken
+                    usdtAddress,             // _usdtToken
                     AVAX_USD_PRICE_FEED,     // _avaxUsdPriceFeed
                     deployerAddress          // _owner
                 ],

@@ -6,12 +6,22 @@ async function main() {
     console.log("🚀 Starting BrewFi Purchase Contract deployment...\n");
 
     // Get the deployer account
-    const [deployer] = await hre.ethers.getSigners();
+    const signers = await hre.ethers.getSigners();
+    if (signers.length === 0) {
+        throw new Error("No accounts found. Please configure PRIVATE_KEY in your .env file.");
+    }
+    
+    const [deployer] = signers;
     console.log("📋 Deployer account:", deployer.address);
     
     // Check deployer balance
     const balance = await hre.ethers.provider.getBalance(deployer.address);
     console.log("💰 Deployer balance:", hre.ethers.formatEther(balance), "AVAX");
+    
+    if (balance < hre.ethers.parseEther("0.1")) {
+        console.log("⚠️  WARNING: Low AVAX balance. You may need testnet tokens from a faucet.");
+        console.log("   Get free testnet AVAX at: https://faucet.avalanche.network/\n");
+    }
 
     // Load products configuration
     const productsConfigPath = path.join(__dirname, "..", "products-config.json");
@@ -20,10 +30,12 @@ async function main() {
 
     // Fuji testnet addresses
     const USDC_ADDRESS = "0x5425890298aed601595a70AB815c96711a31Bc65"; // USDC on Fuji
+    const USDT_ADDRESS = "0x9a01bf917477dD9F5D715D188618fc8B7350cd22"; // USDT on Fuji (Tether USD)
     const AVAX_USD_PRICE_FEED = "0x5498BB86BC934c8D34FDA08E81D444153d0D06aD"; // AVAX/USD on Fuji
     const BREWFI_TOKEN_ADDRESS = "0x9a13d88490e21809Fac732C18ff13EB4849e4630"; // BREWFI token address
 
     console.log("🏦 USDC Address:", USDC_ADDRESS);
+    console.log("🏦 USDT Address:", USDT_ADDRESS);
     console.log("📊 AVAX/USD Price Feed:", AVAX_USD_PRICE_FEED);
     console.log("📊 BREWFI Token Address:", BREWFI_TOKEN_ADDRESS);
     // Deploy BrewFiPurchase contract
@@ -33,6 +45,7 @@ async function main() {
     const brewFiPurchase = await BrewFiPurchase.deploy(
         BREWFI_TOKEN_ADDRESS, // BREWFI token address
         USDC_ADDRESS, // USDC token address
+        USDT_ADDRESS, // USDT token address
         AVAX_USD_PRICE_FEED, // AVAX/USD price feed
         deployer.address // owner
     );
@@ -66,6 +79,12 @@ async function main() {
     console.log("   USDC:", hre.ethers.formatUnits(balances.usdcBalance, 6), "USDC");
     console.log("   AVAX:", hre.ethers.formatEther(balances.avaxBalance), "AVAX");
 
+    // Create deployments directory if it doesn't exist
+    const deploymentsDir = path.join(__dirname, "..", "deployments");
+    if (!fs.existsSync(deploymentsDir)) {
+        fs.mkdirSync(deploymentsDir, { recursive: true });
+    }
+
     // Save deployment information
     const deploymentInfo = {
         contractName: "BrewFiPurchase",
@@ -75,22 +94,19 @@ async function main() {
         timestamp: new Date().toISOString(),
         brewfiTokenAddress: BREWFI_TOKEN_ADDRESS,
         usdcTokenAddress: USDC_ADDRESS,
+        usdtTokenAddress: USDT_ADDRESS,
         avaxUsdPriceFeed: AVAX_USD_PRICE_FEED,
         products: productsConfig.products,
         transactionHash: brewFiPurchase.deploymentTransaction().hash,
         blockNumber: await hre.ethers.provider.getBlockNumber()
     };
 
-    // Create deployments directory if it doesn't exist
-    if (!fs.existsSync(deploymentsDir)) {
-        fs.mkdirSync(deploymentsDir, { recursive: true });
-    }
-
     // Save purchase contract deployment info
     const purchaseDeploymentPath = path.join(deploymentsDir, `purchase-deployment-${Date.now()}.json`);
     fs.writeFileSync(purchaseDeploymentPath, JSON.stringify(deploymentInfo, null, 2));
 
     // Update latest deployment info
+    const latestDeploymentPath = path.join(deploymentsDir, "latest-deployment.json");
     const latestDeploymentInfo = {
         purchaseContract: {
             address: purchaseContractAddress,

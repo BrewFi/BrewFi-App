@@ -321,6 +321,7 @@ token-coffe/
 
 - `purchaseWithUSDC(productId)` - Purchase product with USDC
 - `purchaseWithAVAX(productId)` - Purchase product with AVAX
+- 
 - `calculateBrewfiReward(priceUSD, rewardRatio)` - Calculate BREWFI reward amount
 - `getAvaxUsdPrice()` - Get current AVAX/USD price from Chainlink
 - `getProductCount()` - Get total number of products

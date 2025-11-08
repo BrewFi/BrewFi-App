@@ -1,5 +1,5 @@
 export const PURCHASE_CONTRACT = {
-  address: "0x92749fA7aF4A7659a41d1c7213Dc23fF38D01F01" as `0x${string}`,
+  address: "0x194eC920B6d7e887F63e2Ea77ca743bAEE9b94fd" as `0x${string}`,
   abi: require("../contracts/BrewFiPurchaseABI.json")
 };
 
@@ -11,5 +11,11 @@ export const BREWFI_CONTRACT = {
 // USDC token on Avalanche Fuji Testnet
 export const USDC_CONTRACT = {
   address: "0x5425890298aed601595a70AB815c96711a31Bc65" as `0x${string}`,
+  abi: require("../contracts/ERC20ABI.json")
+};
+
+// USDT token on Avalanche Fuji Testnet
+export const USDT_CONTRACT = {
+  address: "0x9a01bf917477dD9F5D715D188618fc8B7350cd22" as `0x${string}`,
   abi: require("../contracts/ERC20ABI.json")
 };

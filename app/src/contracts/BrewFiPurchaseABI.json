@@ -1,19 +1,98 @@
 [
   {
     "inputs": [
-      {"internalType": "address", "name": "_brewfiToken", "type": "address"},
-      {"internalType": "address", "name": "_usdcToken", "type": "address"},
-      {"internalType": "address", "name": "_avaxUsdPriceFeed", "type": "address"},
-      {"internalType": "address", "name": "_owner", "type": "address"}
+      {
+        "internalType": "address",
+        "name": "_brewfiToken",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_usdcToken",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_usdtToken",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_avaxUsdPriceFeed",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_owner",
+        "type": "address"
+      }
     ],
     "stateMutability": "nonpayable",
     "type": "constructor"
   },
   {
+    "inputs": [],
+    "name": "EnforcedPause",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ExpectedPause",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "owner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnableInvalidOwner",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "OwnableUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "inputs": [],
+    "name": "ReentrancyGuardReentrantCall",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      }
+    ],
+    "name": "SafeERC20FailedOperation",
+    "type": "error"
+  },
+  {
     "anonymous": false,
     "inputs": [
-      {"indexed": true, "internalType": "address", "name": "token", "type": "address"},
-      {"indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256"}
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
     ],
     "name": "ContractFunded",
     "type": "event"
@@ -21,8 +100,18 @@
   {
     "anonymous": false,
     "inputs": [
-      {"indexed": true, "internalType": "address", "name": "token", "type": "address"},
-      {"indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256"}
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "token",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
     ],
     "name": "FundsWithdrawn",
     "type": "event"
@@ -30,8 +119,18 @@
   {
     "anonymous": false,
     "inputs": [
-      {"indexed": true, "internalType": "address", "name": "previousOwner", "type": "address"},
-      {"indexed": true, "internalType": "address", "name": "newOwner", "type": "address"}
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
     ],
     "name": "OwnershipTransferred",
     "type": "event"
@@ -39,10 +138,43 @@
   {
     "anonymous": false,
     "inputs": [
-      {"indexed": true, "internalType": "uint256", "name": "productId", "type": "uint256"},
-      {"indexed": false, "internalType": "string", "name": "name", "type": "string"},
-      {"indexed": false, "internalType": "uint256", "name": "priceUSD", "type": "uint256"},
-      {"indexed": false, "internalType": "uint256", "name": "rewardRatio", "type": "uint256"}
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Paused",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "productId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "priceUSD",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "rewardRatio",
+        "type": "uint256"
+      }
     ],
     "name": "ProductAdded",
     "type": "event"
@@ -50,10 +182,49 @@
   {
     "anonymous": false,
     "inputs": [
-      {"indexed": true, "internalType": "uint256", "name": "productId", "type": "uint256"},
-      {"indexed": false, "internalType": "string", "name": "name", "type": "string"},
-      {"indexed": false, "internalType": "uint256", "name": "priceUSD", "type": "uint256"},
-      {"indexed": false, "internalType": "uint256", "name": "rewardRatio", "type": "uint256"}
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "productId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
+      }
+    ],
+    "name": "ProductToggled",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "productId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "priceUSD",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "rewardRatio",
+        "type": "uint256"
+      }
     ],
     "name": "ProductUpdated",
     "type": "event"
@@ -61,10 +232,30 @@
   {
     "anonymous": false,
     "inputs": [
-      {"indexed": true, "internalType": "address", "name": "buyer", "type": "address"},
-      {"indexed": true, "internalType": "uint256", "name": "productId", "type": "uint256"},
-      {"indexed": false, "internalType": "uint256", "name": "avaxAmount", "type": "uint256"},
-      {"indexed": false, "internalType": "uint256", "name": "brewfiReward", "type": "uint256"}
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "buyer",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "productId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "avaxAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "brewfiReward",
+        "type": "uint256"
+      }
     ],
     "name": "PurchaseWithAVAX",
     "type": "event"
@@ -72,19 +263,186 @@
   {
     "anonymous": false,
     "inputs": [
-      {"indexed": true, "internalType": "address", "name": "buyer", "type": "address"},
-      {"indexed": true, "internalType": "uint256", "name": "productId", "type": "uint256"},
-      {"indexed": false, "internalType": "uint256", "name": "usdcAmount", "type": "uint256"},
-      {"indexed": false, "internalType": "uint256", "name": "brewfiReward", "type": "uint256"}
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "buyer",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "productId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "usdcAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "brewfiReward",
+        "type": "uint256"
+      }
     ],
     "name": "PurchaseWithUSDC",
     "type": "event"
   },
   {
+    "anonymous": false,
     "inputs": [
-      {"internalType": "string", "name": "name", "type": "string"},
-      {"internalType": "uint256", "name": "priceUSD", "type": "uint256"},
-      {"internalType": "uint256", "name": "rewardRatio", "type": "uint256"}
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "buyer",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "productId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "usdtAmount",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "brewfiReward",
+        "type": "uint256"
+      }
+    ],
+    "name": "PurchaseWithUSDT",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "Unpaused",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_PRICE_FEED_STALENESS",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_PRICE_USD",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_PRODUCTS",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "MAX_REWARD_RATIO",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "PRICE_FEED_PRECISION",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "REWARD_PRECISION",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "USD_PRECISION",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "priceUSD",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rewardRatio",
+        "type": "uint256"
+      }
     ],
     "name": "addProduct",
     "outputs": [],
@@ -94,30 +452,60 @@
   {
     "inputs": [],
     "name": "avaxUsdPriceFeed",
-    "outputs": [{"internalType": "contract AggregatorV3Interface", "name": "", "type": "address"}],
+    "outputs": [
+      {
+        "internalType": "contract AggregatorV3Interface",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "brewfiToken",
-    "outputs": [{"internalType": "contract IERC20", "name": "", "type": "address"}],
+    "outputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "",
+        "type": "address"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {"internalType": "uint256", "name": "priceUSD", "type": "uint256"},
-      {"internalType": "uint256", "name": "rewardRatio", "type": "uint256"}
+      {
+        "internalType": "uint256",
+        "name": "priceUSD",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rewardRatio",
+        "type": "uint256"
+      }
     ],
     "name": "calculateBrewfiReward",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "pure",
     "type": "function"
   },
   {
     "inputs": [
-      {"internalType": "uint256", "name": "amount", "type": "uint256"}
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
     ],
     "name": "fundContract",
     "outputs": [],
@@ -130,10 +518,26 @@
     "outputs": [
       {
         "components": [
-          {"internalType": "string", "name": "name", "type": "string"},
-          {"internalType": "uint256", "name": "priceUSD", "type": "uint256"},
-          {"internalType": "uint256", "name": "rewardRatio", "type": "uint256"},
-          {"internalType": "bool", "name": "active", "type": "bool"}
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "priceUSD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardRatio",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool"
+          }
         ],
         "internalType": "struct BrewFiPurchase.Product[]",
         "name": "",
@@ -146,7 +550,13 @@
   {
     "inputs": [],
     "name": "getAvaxUsdPrice",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
@@ -154,25 +564,62 @@
     "inputs": [],
     "name": "getBalances",
     "outputs": [
-      {"internalType": "uint256", "name": "brewfiBalance", "type": "uint256"},
-      {"internalType": "uint256", "name": "usdcBalance", "type": "uint256"},
-      {"internalType": "uint256", "name": "avaxBalance", "type": "uint256"}
+      {
+        "internalType": "uint256",
+        "name": "brewfiBalance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "usdcBalance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "usdtBalance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "avaxBalance",
+        "type": "uint256"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {"internalType": "uint256", "name": "productId", "type": "uint256"}
+      {
+        "internalType": "uint256",
+        "name": "productId",
+        "type": "uint256"
+      }
     ],
     "name": "getProduct",
     "outputs": [
       {
         "components": [
-          {"internalType": "string", "name": "name", "type": "string"},
-          {"internalType": "uint256", "name": "priceUSD", "type": "uint256"},
-          {"internalType": "uint256", "name": "rewardRatio", "type": "uint256"},
-          {"internalType": "bool", "name": "active", "type": "bool"}
+          {
+            "internalType": "string",
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "internalType": "uint256",
+            "name": "priceUSD",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "rewardRatio",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bool",
+            "name": "active",
+            "type": "bool"
+          }
         ],
         "internalType": "struct BrewFiPurchase.Product",
         "name": "",
@@ -185,34 +632,95 @@
   {
     "inputs": [],
     "name": "getProductCount",
-    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [],
     "name": "owner",
-    "outputs": [{"internalType": "address", "name": "", "type": "address"}],
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paused",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {"internalType": "uint256", "name": "", "type": "uint256"}
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
     ],
     "name": "products",
     "outputs": [
-      {"internalType": "string", "name": "name", "type": "string"},
-      {"internalType": "uint256", "name": "priceUSD", "type": "uint256"},
-      {"internalType": "uint256", "name": "rewardRatio", "type": "uint256"},
-      {"internalType": "bool", "name": "active", "type": "bool"}
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "priceUSD",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rewardRatio",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "active",
+        "type": "bool"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      {"internalType": "uint256", "name": "productId", "type": "uint256"}
+      {
+        "internalType": "uint256",
+        "name": "productId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "minBrewfiReward",
+        "type": "uint256"
+      }
     ],
     "name": "purchaseWithAVAX",
     "outputs": [],
@@ -221,9 +729,26 @@
   },
   {
     "inputs": [
-      {"internalType": "uint256", "name": "productId", "type": "uint256"}
+      {
+        "internalType": "uint256",
+        "name": "productId",
+        "type": "uint256"
+      }
     ],
     "name": "purchaseWithUSDC",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "productId",
+        "type": "uint256"
+      }
+    ],
+    "name": "purchaseWithUSDT",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -237,7 +762,11 @@
   },
   {
     "inputs": [
-      {"internalType": "uint256", "name": "productId", "type": "uint256"}
+      {
+        "internalType": "uint256",
+        "name": "productId",
+        "type": "uint256"
+      }
     ],
     "name": "toggleProduct",
     "outputs": [],
@@ -246,7 +775,11 @@
   },
   {
     "inputs": [
-      {"internalType": "address", "name": "newOwner", "type": "address"}
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
     ],
     "name": "transferOwnership",
     "outputs": [],
@@ -255,17 +788,33 @@
   },
   {
     "inputs": [],
-    "name": "usdcToken",
-    "outputs": [{"internalType": "contract IERC20", "name": "", "type": "address"}],
-    "stateMutability": "view",
+    "name": "unpause",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [
-      {"internalType": "uint256", "name": "productId", "type": "uint256"},
-      {"internalType": "string", "name": "name", "type": "string"},
-      {"internalType": "uint256", "name": "priceUSD", "type": "uint256"},
-      {"internalType": "uint256", "name": "rewardRatio", "type": "uint256"}
+      {
+        "internalType": "uint256",
+        "name": "productId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "uint256",
+        "name": "priceUSD",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "rewardRatio",
+        "type": "uint256"
+      }
     ],
     "name": "updateProduct",
     "outputs": [],
@@ -273,8 +822,38 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "usdcToken",
+    "outputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "usdtToken",
+    "outputs": [
+      {
+        "internalType": "contract IERC20",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
-      {"internalType": "uint256", "name": "amount", "type": "uint256"}
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
     ],
     "name": "withdrawAVAX",
     "outputs": [],
@@ -289,10 +868,41 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "withdrawAllUSDC",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "withdrawAllUSDT",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
-      {"internalType": "uint256", "name": "amount", "type": "uint256"}
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
     ],
     "name": "withdrawUSDC",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "amount",
+        "type": "uint256"
+      }
+    ],
+    "name": "withdrawUSDT",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

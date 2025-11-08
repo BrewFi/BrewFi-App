@@ -21,7 +21,9 @@ module.exports = {
     },
     snowtrace: {
       url: 'https://api.avax-test.network/ext/bc/C/rpc',
-      accounts: [process.env.PRIVATE_KEY]
+      chainId: 43113,
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      gasPrice: 225000000000, // 225 gwei
     },
   },
   etherscan: {

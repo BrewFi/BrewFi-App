@@ -45,6 +45,13 @@ contract MockPriceFeed is AggregatorV3Interface {
         _answeredInRound = _roundId;
     }
 
+    function setPriceWithTimestamp(int256 price, uint256 timestamp) external {
+        _price = price;
+        _roundId++;
+        _timestamp = timestamp;
+        _answeredInRound = _roundId;
+    }
+
     function latestRoundData()
         external
         view

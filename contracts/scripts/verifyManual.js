@@ -18,10 +18,11 @@ async function main() {
     const CONTRACTS = {
         // BrewFiPurchase contract
         purchaseContract: {
-            address: "0x92749fA7aF4A7659a41d1c7213Dc23fF38D01F01", // Replace with your contract address
+            address: "0x194eC920B6d7e887F63e2Ea77ca743bAEE9b94fd", // Replace with your contract address
             constructorArgs: [
                 "0x9a13d88490e21809Fac732C18ff13EB4849e4630", // BREWFI token address
                 "0x5425890298aed601595a70AB815c96711a31Bc65", // USDC token address
+                "0x9a01bf917477dD9F5D715D188618fc8B7350cd22", // USDT token address
                 "0x5498BB86BC934c8D34FDA08E81D444153d0D06aD", // AVAX/USD price feed
                 "0x22557E1382659A8EdAffE981fc69b7bEf731e386"  // Owner address
             ]
