@@ -184,7 +184,7 @@ export default function DappOnboardingPage() {
           </h1>
           <p className="text-gray-400 max-w-2xl mx-auto text-sm sm:text-base">
             {mode === "signup"
-              ? "Use your email and password to spin up an invisible wallet backed by Supabase."
+              ? "Use your email and password to spin up an invisible wallet backed by Wallet Theter."
               : "Welcome back! Sign in to access your custodial wallet."}
           </p>
         </header>

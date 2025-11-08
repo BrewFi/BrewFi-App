@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Navbar } from '@/components/Navbar'
 import { BottomNav } from '@/components/BottomNav'
 import { User, Bell, Shield, Wallet, Globe, Moon, Coins, Loader2, CheckCircle2, AlertCircle, ExternalLink, Copy, Check } from 'lucide-react'
 import { useInvisibleWallet } from '@/providers/InvisibleWalletProvider'
+import { useSupabaseAuth } from '@/providers/SupabaseAuthProvider'
 import { USDT_CONTRACT } from '@/config/contracts'
 import { encodeFunctionData, formatUnits, parseUnits } from 'viem'
 import { createContractReader } from '@/lib/contractReader'
@@ -14,11 +16,14 @@ import Link from 'next/link'
 
 export default function DAppSettings() {
   const { hydrated, isReady, primaryAccount, callContract, refresh } = useInvisibleWallet()
+  const { signOut } = useSupabaseAuth()
+  const router = useRouter()
   const [minting, setMinting] = useState(false)
   const [mintStatus, setMintStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [mintTxHash, setMintTxHash] = useState<string | null>(null)
   const [mintError, setMintError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [disconnecting, setDisconnecting] = useState(false)
   
   // Fixed amount: 10 USDT (10 * 10^6 = 10000000)
   const MINT_AMOUNT = parseUnits('10', 6)
@@ -66,10 +71,6 @@ export default function DAppSettings() {
               <div className="font-medium">Profile Information</div>
               <div className="text-sm text-gray-400">Update your personal details</div>
             </Link>
-            <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-white/5 transition-all">
-              <div className="font-medium">Email & Password</div>
-              <div className="text-sm text-gray-400">Change your login credentials</div>
-            </button>
           </div>
         </div>
 
@@ -326,16 +327,6 @@ export default function DAppSettings() {
             <h3 className="text-xl font-bold">Preferences</h3>
           </div>
           <div className="space-y-3 pl-9">
-            <div className="flex items-center justify-between py-3 px-4 rounded-lg hover:bg-white/5 transition-all">
-              <div>
-                <div className="font-medium">Dark Mode</div>
-                <div className="text-sm text-gray-400">Toggle dark theme</div>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
-                <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-cyber-blue"></div>
-              </label>
-            </div>
             <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-white/5 transition-all">
               <div className="font-medium flex items-center gap-2">
                 <Globe className="w-4 h-4" />
@@ -350,13 +341,40 @@ export default function DAppSettings() {
         <div className="cyber-card p-6 border-red-500/20">
           <h3 className="text-xl font-bold text-red-500 mb-4">Danger Zone</h3>
           <div className="space-y-3">
-            <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-red-500/10 transition-all border border-red-500/20">
-              <div className="font-medium text-red-500">Disconnect Wallet</div>
-              <div className="text-sm text-gray-400">Remove all connected wallets</div>
-            </button>
-            <button className="w-full text-left py-3 px-4 rounded-lg hover:bg-red-500/10 transition-all border border-red-500/20">
-              <div className="font-medium text-red-500">Delete Account</div>
-              <div className="text-sm text-gray-400">Permanently delete your account and data</div>
+            <button
+              onClick={async () => {
+                if (disconnecting) return
+                
+                setDisconnecting(true)
+                try {
+                  const { error } = await signOut()
+                  if (error) {
+                    console.error('Error signing out:', error)
+                    // Still redirect even if there's an error
+                  }
+                  // Redirect to onboarding page
+                  router.push('/onboarding')
+                } catch (err) {
+                  console.error('Failed to disconnect wallet:', err)
+                  setDisconnecting(false)
+                }
+              }}
+              disabled={disconnecting}
+              className={`w-full text-left py-3 px-4 rounded-lg transition-all border border-red-500/20 flex items-center justify-between ${
+                disconnecting
+                  ? 'bg-red-500/5 cursor-not-allowed'
+                  : 'hover:bg-red-500/10 cursor-pointer'
+              }`}
+            >
+              <div>
+                <div className="font-medium text-red-500 flex items-center gap-2">
+                  {disconnecting && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Disconnect Wallet
+                </div>
+                <div className="text-sm text-gray-400">
+                  {disconnecting ? 'Disconnecting...' : 'Sign out and clear session'}
+                </div>
+              </div>
             </button>
           </div>
         </div>
