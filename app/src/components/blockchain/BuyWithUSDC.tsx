@@ -5,11 +5,13 @@ import { formatUnits, encodeFunctionData } from "viem";
 import { USDC_CONTRACT, PURCHASE_CONTRACT } from "@/config/contracts";
 import { useInvisibleWallet } from "@/providers/InvisibleWalletProvider";
 import { createContractReader } from "@/lib/contractReader";
+import { notifyPaymentWebhook } from "@/lib/qrPaymentWebhook";
 import { Loader2, CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
 
 interface BuyWithUSDCProps {
   productId: number;
   priceUSD: string; // USDC price scaled by 1e6
+  sessionId?: string; // QR payment session ID for webhook notification
   onSuccess?: () => void;
 }
 
@@ -18,6 +20,7 @@ type StepState = "idle" | "checking" | "approving" | "purchasing" | "success" | 
 export default function BuyWithUSDC({
   productId,
   priceUSD,
+  sessionId,
   onSuccess,
 }: BuyWithUSDCProps) {
   const { isReady, primaryAccount, callContract, refresh } = useInvisibleWallet();
@@ -46,6 +49,7 @@ export default function BuyWithUSDC({
   const shortfallDisplay = formatUnits(shortfall, 6);
 
   // Refresh balance after successful purchase (wait for transaction confirmation)
+  // Also notify webhook if sessionId is provided
   useEffect(() => {
     if (status === "success" && txHash) {
       const waitAndRefresh = async () => {
@@ -59,6 +63,24 @@ export default function BuyWithUSDC({
           });
           // Wait a bit more for balance to update on-chain
           await new Promise((resolve) => setTimeout(resolve, 2000));
+          
+          // Notify webhook if sessionId is provided (for QR payments)
+          if (sessionId && primaryAccount) {
+            try {
+              await notifyPaymentWebhook(
+                sessionId,
+                txHash,
+                primaryAccount.address,
+                "USDC",
+                priceUSD
+              );
+              console.log("Payment webhook notified successfully");
+            } catch (webhookError) {
+              console.error("Error notifying webhook:", webhookError);
+              // Don't fail the payment if webhook fails
+            }
+          }
+          
           // Refresh balance
           await refresh();
           // Give it a moment for state to update
@@ -76,7 +98,7 @@ export default function BuyWithUSDC({
       };
       waitAndRefresh();
     }
-  }, [status, txHash, refresh]);
+  }, [status, txHash, refresh, sessionId, primaryAccount, priceUSD]);
 
   const handlePurchase = async () => {
     if (!isReady || !primaryAccount) {

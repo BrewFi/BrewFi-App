@@ -5,6 +5,8 @@ import { Navbar } from '@/components/Navbar'
 import { BottomNav } from '@/components/BottomNav'
 import { QRCode } from '@/components/QRCode'
 import { useInvisibleWallet } from '@/providers/InvisibleWalletProvider'
+import { useSupabaseAuth } from '@/providers/SupabaseAuthProvider'
+import { supabaseClient } from '@/lib/supabaseClient'
 import { fetchAllProducts, type ContractProduct } from '@/lib/contractReader'
 import { formatUnits } from 'viem'
 import { Clock, AlertCircle } from 'lucide-react'
@@ -57,12 +59,14 @@ interface ProductDisplay {
 
 export default function SellerPage() {
   const { isReady, primaryAccount } = useInvisibleWallet()
+  const { user } = useSupabaseAuth()
   const [products, setProducts] = useState<ProductDisplay[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null)
   const [qrData, setQrData] = useState<PaymentQRData | null>(null)
   const [timeRemaining, setTimeRemaining] = useState<number>(0)
   const [error, setError] = useState<string | null>(null)
+  const [creatingSession, setCreatingSession] = useState(false)
 
   // Load products
   useEffect(() => {
@@ -101,8 +105,8 @@ export default function SellerPage() {
     loadProducts()
   }, [])
 
-  // Generate QR code data
-  const generateQRCode = () => {
+  // Generate QR code data and create database record
+  const generateQRCode = async () => {
     if (!isReady || !primaryAccount || selectedProduct === null) {
       setError('Please select a product and ensure your wallet is ready')
       return
@@ -114,21 +118,57 @@ export default function SellerPage() {
       return
     }
 
-    const sessionId = generateSessionId()
-    const expiresAt = getExpirationTime()
-
-    const data: PaymentQRData = {
-      sessionId,
-      walletAddress: primaryAccount.address,
-      productId: product.id,
-      amount: product.priceUSD,
-      timestamp: Date.now(),
-      expiresAt,
-      productName: product.name,
+    if (!user) {
+      setError('Please sign in to generate payment QR codes')
+      return
     }
 
-    setQrData(data)
+    setCreatingSession(true)
     setError(null)
+
+    try {
+      const sessionId = generateSessionId()
+      const expiresAt = getExpirationTime()
+      const expiresAtISO = new Date(expiresAt).toISOString()
+
+      // Create database record for the payment session
+      const { error: dbError } = await supabaseClient
+        .from('qr_payment_sessions')
+        .insert({
+          session_id: sessionId,
+          seller_wallet_address: primaryAccount.address,
+          product_id: product.id,
+          product_name: product.name,
+          amount: product.priceUSD,
+          status: 'pending',
+          expires_at: expiresAtISO,
+        })
+
+      if (dbError) {
+        console.error('Error creating payment session:', dbError)
+        setError('Failed to create payment session. Please try again.')
+        setCreatingSession(false)
+        return
+      }
+
+      const data: PaymentQRData = {
+        sessionId,
+        walletAddress: primaryAccount.address,
+        productId: product.id,
+        amount: product.priceUSD,
+        timestamp: Date.now(),
+        expiresAt,
+        productName: product.name,
+      }
+
+      setQrData(data)
+      setError(null)
+    } catch (err) {
+      console.error('Error generating QR code:', err)
+      setError('Failed to generate QR code. Please try again.')
+    } finally {
+      setCreatingSession(false)
+    }
   }
 
   // Timer for expiration
@@ -237,10 +277,14 @@ export default function SellerPage() {
               <div className="flex justify-center">
                 <button
                   onClick={generateQRCode}
-                  disabled={!selectedProductData || !!qrData}
+                  disabled={!selectedProductData || !!qrData || creatingSession}
                   className="px-6 py-3 bg-cyber-blue text-black font-semibold rounded-lg hover:bg-cyber-blue/90 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {qrData ? 'QR Code Generated' : 'Generate Payment QR Code'}
+                  {creatingSession
+                    ? 'Creating Session...'
+                    : qrData
+                    ? 'QR Code Generated'
+                    : 'Generate Payment QR Code'}
                 </button>
               </div>
             )}

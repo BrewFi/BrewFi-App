@@ -210,12 +210,14 @@ export default function QRPayPage() {
                         <BuyWithUSDC
                           productId={scannedData.productId}
                           priceUSD={scannedData.amount}
+                          sessionId={scannedData.sessionId}
                           onSuccess={handlePaymentSuccess}
                         />
                       ) : (
                         <BuyWithUSDT
                           productId={scannedData.productId}
                           priceUSD={scannedData.amount}
+                          sessionId={scannedData.sessionId}
                           onSuccess={handlePaymentSuccess}
                         />
                       )}

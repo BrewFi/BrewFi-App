@@ -433,7 +433,7 @@ export function QRScanner({
               </div>
             )}
             {scanning && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="absolute inset-0 flex justify-center pointer-events-none top-24">
                 <div className="border-2 border-cyber-blue rounded-lg w-64 h-64 shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]" />
               </div>
             )}
