@@ -1,14 +1,25 @@
 'use client'
 
+import { useState } from 'react'
 import { Navbar } from '@/components/Navbar'
 import { BottomNav } from '@/components/BottomNav'
-import { User, Bell, Shield, Wallet, Globe, Moon } from 'lucide-react'
+import { User, Bell, Shield, Wallet, Globe, Moon, Coins, Loader2, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react'
 import { useInvisibleWallet } from '@/providers/InvisibleWalletProvider'
+import { USDT_CONTRACT } from '@/config/contracts'
+import { encodeFunctionData, formatUnits, parseUnits } from 'viem'
+import { createContractReader } from '@/lib/contractReader'
 
 // Settings page - User preferences and configuration
 
 export default function DAppSettings() {
-  const { hydrated, isReady } = useInvisibleWallet()
+  const { hydrated, isReady, primaryAccount, callContract, refresh } = useInvisibleWallet()
+  const [minting, setMinting] = useState(false)
+  const [mintStatus, setMintStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [mintTxHash, setMintTxHash] = useState<string | null>(null)
+  const [mintError, setMintError] = useState<string | null>(null)
+  
+  // Fixed amount: 10 USDT (10 * 10^6 = 10000000)
+  const MINT_AMOUNT = parseUnits('10', 6)
 
   return (
     <div className="min-h-screen pb-28">
@@ -74,6 +85,139 @@ export default function DAppSettings() {
               <div className="font-medium">Transaction History</div>
               <div className="text-sm text-gray-400">View your past transactions</div>
             </button>
+          </div>
+        </div>
+
+        {/* Test Tokens */}
+        <div className="cyber-card p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Coins className="w-6 h-6 text-cyber-blue" />
+            <h3 className="text-xl font-bold">Test Tokens</h3>
+          </div>
+          <div className="space-y-4 pl-9">
+            <div className="space-y-2">
+              <p className="text-sm text-gray-300">Get 10 USDT test tokens for testing on Fuji testnet</p>
+            </div>
+            
+            <div className="space-y-3">
+              {primaryAccount && (
+                <div className="bg-black/50 border border-cyber-blue/30 rounded-lg p-3">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-400">Your USDT Balance:</span>
+                    <span className="font-semibold text-cyber-blue">
+                      {formatUnits(
+                        primaryAccount.tokenBalances[USDT_CONTRACT.address] ?? 0n,
+                        6
+                      )} USDT
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {mintStatus === 'success' && mintTxHash && (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-sm text-green-400">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span className="font-semibold">Tokens minted successfully! 🎉</span>
+                  </div>
+                  <div className="mt-2">
+                    <a
+                      href={`https://testnet.snowtrace.io/tx/${mintTxHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-cyber-blue hover:underline flex items-center gap-1"
+                    >
+                      View transaction
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                </div>
+              )}
+
+              {mintStatus === 'error' && mintError && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                  <div className="flex items-start gap-2 text-sm">
+                    <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-red-400 font-semibold">Mint Failed</div>
+                      <div className="text-red-300 text-xs mt-1">{mintError}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={async () => {
+                  if (!isReady || !primaryAccount) {
+                    return
+                  }
+
+                  setMinting(true)
+                  setMintStatus('idle')
+                  setMintError(null)
+                  setMintTxHash(null)
+
+                  try {
+                    // Encode the mint function call
+                    // Note: The USDT contract's mint function only takes amount
+                    // and mints to msg.sender (the caller's address)
+                    // Fixed amount: 10 USDT
+                    const mintData = encodeFunctionData({
+                      abi: USDT_CONTRACT.abi,
+                      functionName: 'mint',
+                      args: [MINT_AMOUNT],
+                    })
+
+                    // Call the mint function
+                    const result = await callContract({
+                      to: USDT_CONTRACT.address,
+                      data: mintData,
+                    })
+
+                    setMintTxHash(result.hash)
+                    setMintStatus('success')
+
+                    // Wait for transaction confirmation and refresh balance
+                    setTimeout(async () => {
+                      try {
+                        const client = createContractReader()
+                        // Wait for transaction to be confirmed
+                        await client.waitForTransactionReceipt({
+                          hash: result.hash as `0x${string}`,
+                          timeout: 30_000, // 30 seconds timeout
+                        })
+                        // Wait a bit more for balance to update on-chain
+                        await new Promise((resolve) => setTimeout(resolve, 2000))
+                        // Refresh balance
+                        await refresh()
+                      } catch (err) {
+                        console.error('Error waiting for transaction confirmation:', err)
+                        // Still try to refresh even if wait fails
+                        setTimeout(async () => {
+                          await refresh()
+                        }, 5000)
+                      }
+                    }, 1000)
+                  } catch (err) {
+                    setMintStatus('error')
+                    setMintError(
+                      err instanceof Error ? err.message : 'Failed to mint tokens'
+                    )
+                  } finally {
+                    setMinting(false)
+                  }
+                }}
+                disabled={minting || !isReady || !primaryAccount}
+                className={`w-full px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+                  minting || !isReady || !primaryAccount
+                    ? 'bg-gray-600/50 border border-gray-600 text-gray-400 cursor-not-allowed'
+                    : 'bg-cyber-blue text-black hover:bg-cyber-blue/90 hover:shadow-lg hover:shadow-cyber-blue/50 hover:scale-[1.02]'
+                }`}
+              >
+                {minting && <Loader2 className="w-5 h-5 animate-spin" />}
+                {minting ? 'Minting...' : 'Get 10 USDT for test'}
+              </button>
+            </div>
           </div>
         </div>
 
