@@ -17,6 +17,7 @@ export function QRScanner({
   fps = 10
 }: QRScannerProps) {
   const scannerRef = useRef<any>(null)
+  const isRunningRef = useRef<boolean>(false)
   const [scanning, setScanning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasPermission, setHasPermission] = useState<boolean | null>(null)
@@ -24,6 +25,52 @@ export function QRScanner({
 
   useEffect(() => {
     let mounted = true
+
+    const stopScanner = async (scanner: any, force: boolean = false) => {
+      if (!scanner) {
+        return
+      }
+
+      // If force is false, only stop if we think it's running
+      if (!force && !isRunningRef.current) {
+        return
+      }
+
+      try {
+        // Check if scanner has a getState method to verify it's running
+        if (typeof scanner.getState === 'function') {
+          const state = scanner.getState()
+          // Html5Qrcode states: 0 = UNKNOWN, 1 = SCANNING, 2 = NOT_STARTED, 3 = PAUSED
+          // Only stop if scanner is actually running (1) or paused (3)
+          if (state === 1 || state === 3) {
+            await scanner.stop()
+          }
+        } else {
+          // Fallback: try to stop, but catch the error if it's not running
+          await scanner.stop()
+        }
+        isRunningRef.current = false
+      } catch (err: any) {
+        // Ignore errors about scanner not running or paused
+        const errorMessage = (err?.message || '').toLowerCase()
+        if (
+          !errorMessage.includes('not running') &&
+          !errorMessage.includes('not paused') &&
+          !errorMessage.includes('cannot stop') &&
+          !errorMessage.includes('scanner is not running')
+        ) {
+          // Only log unexpected errors
+          console.error('Error stopping scanner:', err)
+        }
+        isRunningRef.current = false
+      }
+
+      try {
+        await scanner.clear()
+      } catch (err) {
+        // Ignore clear errors - they're not critical
+      }
+    }
 
     const startScanning = async () => {
       // Only run on client side
@@ -52,7 +99,6 @@ export function QRScanner({
         if (!mounted) return
 
         const html5QrCode = new Html5Qrcode(containerId)
-        scannerRef.current = html5QrCode
 
         await html5QrCode.start(
           { facingMode: 'environment' }, // Use back camera on mobile
@@ -61,10 +107,11 @@ export function QRScanner({
             qrbox: { width: 250, height: 250 },
             aspectRatio: 1.0,
           },
-          (decodedText) => {
-            // Success callback
+          async (decodedText) => {
+            // Success callback - stop scanner after successful scan
             setScanning(false)
-            html5QrCode.stop().catch(() => {})
+            // Stop the scanner (force stop since we know it was running)
+            await stopScanner(html5QrCode, true)
             onScanSuccess(decodedText)
           },
           (errorMessage) => {
@@ -75,6 +122,9 @@ export function QRScanner({
           }
         )
         
+        // Only set ref and running state after successful start
+        scannerRef.current = html5QrCode
+        isRunningRef.current = true
         setScanning(true)
         setError(null)
       } catch (err) {
@@ -82,6 +132,9 @@ export function QRScanner({
         const errorMessage = err instanceof Error ? err.message : 'Failed to start scanner'
         setError(errorMessage)
         setHasPermission(false)
+        // Don't set scannerRef if initialization failed
+        scannerRef.current = null
+        isRunningRef.current = false
         if (onError) {
           onError(errorMessage)
         }
@@ -93,23 +146,68 @@ export function QRScanner({
     return () => {
       mounted = false
       if (scannerRef.current) {
-        scannerRef.current.stop().catch(() => {})
-        scannerRef.current.clear().catch(() => {})
+        stopScanner(scannerRef.current)
         scannerRef.current = null
       }
+      isRunningRef.current = false
     }
   }, [fps, onScanSuccess, onError])
 
   const handleStop = async () => {
-    if (scannerRef.current) {
-      try {
-        await scannerRef.current.stop()
-        await scannerRef.current.clear()
-      } catch (err) {
+    if (!scannerRef.current) {
+      setScanning(false)
+      if (onClose) {
+        onClose()
+      }
+      return
+    }
+
+    const scanner = scannerRef.current
+    scannerRef.current = null
+
+    // Stop the scanner with proper error handling
+    if (!isRunningRef.current) {
+      setScanning(false)
+      if (onClose) {
+        onClose()
+      }
+      return
+    }
+
+    try {
+      // Check if scanner has a getState method to verify it's running
+      if (typeof scanner.getState === 'function') {
+        const state = scanner.getState()
+        // Only stop if scanner is actually running (1) or paused (3)
+        if (state === 1 || state === 3) {
+          await scanner.stop()
+        }
+      } else {
+        // Fallback: try to stop, but catch the error if it's not running
+        await scanner.stop()
+      }
+      isRunningRef.current = false
+    } catch (err: any) {
+      // Ignore errors about scanner not running or paused
+      const errorMessage = (err?.message || '').toLowerCase()
+      if (
+        !errorMessage.includes('not running') &&
+        !errorMessage.includes('not paused') &&
+        !errorMessage.includes('cannot stop') &&
+        !errorMessage.includes('scanner is not running')
+      ) {
+        // Only log unexpected errors
         console.error('Error stopping scanner:', err)
       }
-      scannerRef.current = null
+      isRunningRef.current = false
     }
+
+    try {
+      await scanner.clear()
+    } catch (err) {
+      // Ignore clear errors
+    }
+
     setScanning(false)
     if (onClose) {
       onClose()
