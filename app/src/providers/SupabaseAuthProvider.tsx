@@ -29,6 +29,10 @@ interface SignOutResult {
   error: AuthError | null;
 }
 
+interface SignInWithGoogleResult {
+  error: AuthError | null;
+}
+
 interface AuthContextValue {
   supabase: SupabaseClient;
   session: Session | null;
@@ -36,6 +40,7 @@ interface AuthContextValue {
   loading: boolean;
   signIn: (params: { email: string; password: string }) => Promise<SignInResult>;
   signUp: (params: { email: string; password: string }) => Promise<SignUpResult>;
+  signInWithGoogle: () => Promise<SignInWithGoogleResult>;
   signOut: () => Promise<SignOutResult>;
 }
 
@@ -97,6 +102,16 @@ export function SupabaseAuthProvider({
     };
   }, []);
 
+  const signInWithGoogle = useCallback<AuthContextValue["signInWithGoogle"]>(async () => {
+    const { error } = await supabaseClient.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/dapp/onboarding`,
+      },
+    });
+    return { error: error ?? null };
+  }, []);
+
   const signOut = useCallback<AuthContextValue["signOut"]>(async () => {
     const { error } = await supabaseClient.auth.signOut();
     return { error: error ?? null };
@@ -110,9 +125,10 @@ export function SupabaseAuthProvider({
       loading,
       signIn,
       signUp,
+      signInWithGoogle,
       signOut,
     }),
-    [loading, session, signIn, signOut, signUp],
+    [loading, session, signIn, signUp, signInWithGoogle, signOut],
   );
 
   return (

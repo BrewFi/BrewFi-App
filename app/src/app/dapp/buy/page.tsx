@@ -42,7 +42,7 @@ export default function BuyPage() {
   const [products, setProducts] = useState<ProductDisplay[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('USDC')
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('USDT')
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -122,7 +122,7 @@ export default function BuyPage() {
           {/* Payment Method Selector */}
           {isReady && (
             <div className="flex justify-center gap-2 pt-2">
-              <button
+              {/* <button
                 onClick={() => setPaymentMethod('USDC')}
                 className={`px-4 py-2 rounded-lg font-semibold transition-all ${
                   paymentMethod === 'USDC'
@@ -131,7 +131,7 @@ export default function BuyPage() {
                 }`}
               >
                 Pay with USDC
-              </button>
+              </button> */}
               <button
                 onClick={() => setPaymentMethod('USDT')}
                 className={`px-4 py-2 rounded-lg font-semibold transition-all ${

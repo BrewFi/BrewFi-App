@@ -104,6 +104,43 @@ For production use, consider:
 - Implementing backup/recovery mechanisms
 - Adding rate limiting to wallet creation
 
+## Google OAuth Setup
+
+To enable Google login, you need to configure OAuth in both Google Cloud Console and Supabase:
+
+### 1. Google Cloud Console Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Enable the **Google+ API** (or **Google Identity API**)
+4. Go to **Credentials** → **Create Credentials** → **OAuth client ID**
+5. Select **Web application**
+6. Add authorized redirect URIs:
+   - `https://<your-project-ref>.supabase.co/auth/v1/callback`
+   - For local development: `http://localhost:3000/auth/v1/callback` (if using Supabase local setup)
+7. Copy the **Client ID** and **Client Secret**
+
+### 2. Supabase Dashboard Setup
+
+1. Go to your Supabase project dashboard
+2. Navigate to **Authentication** → **Providers**
+3. Find **Google** in the list and enable it
+4. Enter your **Client ID** and **Client Secret** from Google Cloud Console
+5. Save the configuration
+
+### 3. Configure Redirect URL
+
+The redirect URL in your Google OAuth settings must match:
+- Production: `https://<your-project-ref>.supabase.co/auth/v1/callback`
+- The app will redirect users back to `/dapp/onboarding` after authentication
+
+### 4. Testing Google OAuth
+
+1. Click "Continue with Google" on the onboarding page
+2. You'll be redirected to Google's sign-in page
+3. After authentication, you'll be redirected back to the app
+4. The wallet will be automatically created if it doesn't exist
+
 ## Environment Variables
 
 Ensure these are set in your `.env.local`:
