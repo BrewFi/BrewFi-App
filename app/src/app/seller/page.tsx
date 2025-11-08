@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Navbar } from '@/components/Navbar'
 import { BottomNav } from '@/components/BottomNav'
 import { QRCode } from '@/components/QRCode'
@@ -9,7 +9,7 @@ import { useSupabaseAuth } from '@/providers/SupabaseAuthProvider'
 import { supabaseClient } from '@/lib/supabaseClient'
 import { fetchAllProducts, type ContractProduct } from '@/lib/contractReader'
 import { formatUnits } from 'viem'
-import { Clock, AlertCircle } from 'lucide-react'
+import { Clock, AlertCircle, CheckCircle2, X } from 'lucide-react'
 
 // Payment session data structure
 interface PaymentQRData {
@@ -57,6 +57,22 @@ interface ProductDisplay {
   active: boolean
 }
 
+interface PaymentSession {
+  id: string
+  session_id: string
+  seller_wallet_address: string
+  product_id: number | null
+  product_name: string | null
+  amount: string
+  status: 'pending' | 'paid' | 'expired'
+  created_at: string
+  expires_at: string
+  payment_tx_hash: string | null
+  buyer_address: string | null
+  payment_method: string | null
+  notified_at: string | null
+}
+
 export default function SellerPage() {
   const { isReady, primaryAccount } = useInvisibleWallet()
   const { user } = useSupabaseAuth()
@@ -67,6 +83,11 @@ export default function SellerPage() {
   const [timeRemaining, setTimeRemaining] = useState<number>(0)
   const [error, setError] = useState<string | null>(null)
   const [creatingSession, setCreatingSession] = useState(false)
+  const [paymentReceived, setPaymentReceived] = useState<PaymentSession | null>(null)
+  const [sessionStatus, setSessionStatus] = useState<'pending' | 'paid' | 'expired'>('pending')
+  const subscriptionRef = useRef<any>(null)
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const currentSessionIdRef = useRef<string | null>(null)
 
   // Load products
   useEffect(() => {
@@ -163,6 +184,30 @@ export default function SellerPage() {
 
       setQrData(data)
       setError(null)
+      setSessionStatus('pending')
+      setPaymentReceived(null)
+
+      // Immediately check if payment was already received (edge case)
+      const { data: existingSession } = await supabaseClient
+        .from('qr_payment_sessions')
+        .select('*')
+        .eq('session_id', sessionId)
+        .single()
+
+      if (existingSession) {
+        const session = existingSession as PaymentSession
+        if (session.status === 'paid') {
+          setSessionStatus('paid')
+          setPaymentReceived(session)
+          setError(null)
+        } else {
+          // Set up real-time subscription to monitor payment status
+          setupPaymentSubscription(sessionId)
+        }
+      } else {
+        // Set up real-time subscription to monitor payment status
+        setupPaymentSubscription(sessionId)
+      }
     } catch (err) {
       console.error('Error generating QR code:', err)
       setError('Failed to generate QR code. Please try again.')
@@ -170,6 +215,148 @@ export default function SellerPage() {
       setCreatingSession(false)
     }
   }
+
+  // Set up real-time subscription to monitor payment status
+  const setupPaymentSubscription = useCallback((sessionId: string) => {
+    console.log('Setting up payment subscription for session:', sessionId)
+    
+    // Store current session ID
+    currentSessionIdRef.current = sessionId
+    
+    // Clean up existing subscription and polling
+    if (subscriptionRef.current) {
+      subscriptionRef.current.unsubscribe()
+      subscriptionRef.current = null
+    }
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current)
+      pollIntervalRef.current = null
+    }
+
+    // Subscribe to changes for this specific session
+    subscriptionRef.current = supabaseClient
+      .channel(`qr-payment-${sessionId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'qr_payment_sessions',
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          console.log('📡 Real-time update received:', payload)
+          const updatedSession = payload.new as PaymentSession
+          console.log('Payment session updated via real-time:', updatedSession)
+          
+          if (updatedSession.status === 'paid') {
+            console.log('✅ Payment received! Updating UI...')
+            setSessionStatus('paid')
+            setPaymentReceived(updatedSession)
+            setError(null)
+            // Stop polling when paid
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current)
+              pollIntervalRef.current = null
+            }
+          } else if (updatedSession.status === 'expired') {
+            setSessionStatus('expired')
+            setQrData(null)
+            // Stop polling when expired
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current)
+              pollIntervalRef.current = null
+            }
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log('🔔 Subscription status:', status)
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Successfully subscribed to payment updates for session:', sessionId)
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Subscription error - falling back to polling only')
+        }
+      })
+
+    // Also poll for updates as a fallback (every 2 seconds for faster response)
+    console.log('🔄 Starting polling for session:', sessionId)
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        console.log('🔍 Polling for session status:', sessionId)
+        const { data, error } = await supabaseClient
+          .from('qr_payment_sessions')
+          .select('*')
+          .eq('session_id', sessionId)
+          .single()
+
+        if (error) {
+          console.error('❌ Error fetching session status:', error)
+          return
+        }
+
+        if (data) {
+          const session = data as PaymentSession
+          console.log('📊 Current session status:', session.status, 'for session:', sessionId)
+          
+          if (session.status === 'paid') {
+            console.log('✅ Payment found via polling! Updating UI...')
+            setSessionStatus('paid')
+            setPaymentReceived(session)
+            setError(null)
+            // Stop polling when paid
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current)
+              pollIntervalRef.current = null
+            }
+          } else if (session.status === 'expired') {
+            console.log('⏰ Session expired')
+            setSessionStatus('expired')
+            setQrData(null)
+            // Stop polling when expired
+            if (pollIntervalRef.current) {
+              clearInterval(pollIntervalRef.current)
+              pollIntervalRef.current = null
+            }
+          }
+        } else {
+          console.log('⚠️ No session data found for:', sessionId)
+        }
+      } catch (err) {
+        console.error('❌ Error polling session status:', err)
+      }
+    }, 2000) // Poll every 2 seconds instead of 3 for faster response
+  }, [])
+
+  // Re-setup subscription when qrData.sessionId changes (only if not already set up)
+  useEffect(() => {
+    if (qrData?.sessionId && sessionStatus === 'pending') {
+      // Only set up if we don't already have a subscription for this session
+      if (currentSessionIdRef.current !== qrData.sessionId) {
+        console.log('🔧 Setting up subscription for new session:', qrData.sessionId)
+        setupPaymentSubscription(qrData.sessionId)
+      } else {
+        console.log('✅ Subscription already active for session:', qrData.sessionId)
+      }
+    }
+
+    // Cleanup subscription and polling on unmount or when QR data is cleared
+    return () => {
+      if (!qrData) {
+        if (subscriptionRef.current) {
+          console.log('🧹 Cleaning up subscription (QR data cleared)')
+          subscriptionRef.current.unsubscribe()
+          subscriptionRef.current = null
+        }
+        if (pollIntervalRef.current) {
+          console.log('🧹 Cleaning up polling interval (QR data cleared)')
+          clearInterval(pollIntervalRef.current)
+          pollIntervalRef.current = null
+        }
+        currentSessionIdRef.current = null
+      }
+    }
+  }, [qrData?.sessionId, sessionStatus, setupPaymentSubscription])
 
   // Timer for expiration
   useEffect(() => {
@@ -289,8 +476,70 @@ export default function SellerPage() {
               </div>
             )}
 
+            {/* Payment Received Alert */}
+            {paymentReceived && sessionStatus === 'paid' && (
+              <div className="bg-green-500/20 border-2 border-green-500/50 rounded-lg p-6 space-y-4 animate-pulse">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-8 h-8 text-green-400" />
+                    <div>
+                      <h3 className="text-xl font-bold text-green-400">Payment Received! 🎉</h3>
+                      <p className="text-green-300 text-sm">Your payment has been successfully processed</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setPaymentReceived(null)
+                      setQrData(null)
+                      setSessionStatus('pending')
+                    }}
+                    className="p-2 hover:bg-green-500/20 rounded-full transition"
+                  >
+                    <X className="w-5 h-5 text-green-400" />
+                  </button>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Product:</span>
+                    <span className="text-white font-semibold">{paymentReceived.product_name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Amount:</span>
+                    <span className="text-white font-semibold">
+                      ${formatUnits(BigInt(paymentReceived.amount), 6)} USD
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Payment Method:</span>
+                    <span className="text-white font-semibold">{paymentReceived.payment_method}</span>
+                  </div>
+                  {paymentReceived.payment_tx_hash && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400">Transaction:</span>
+                      <a
+                        href={`https://testnet.snowtrace.io/tx/${paymentReceived.payment_tx_hash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-cyber-blue hover:underline text-xs font-mono"
+                      >
+                        {paymentReceived.payment_tx_hash.slice(0, 8)}...{paymentReceived.payment_tx_hash.slice(-6)}
+                      </a>
+                    </div>
+                  )}
+                  {paymentReceived.buyer_address && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-400">From:</span>
+                      <span className="text-white font-mono text-xs">
+                        {paymentReceived.buyer_address.slice(0, 6)}...{paymentReceived.buyer_address.slice(-4)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* QR Code Display */}
-            {qrData && qrCodeString && (
+            {qrData && qrCodeString && sessionStatus !== 'paid' && (
               <div className="cyber-card p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold">Payment QR Code</h2>
@@ -302,7 +551,58 @@ export default function SellerPage() {
                   )}
                 </div>
 
-                {timeRemaining === 0 && (
+                {sessionStatus === 'pending' && timeRemaining > 0 && (
+                  <div className="bg-cyber-blue/10 border border-cyber-blue/30 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-cyber-blue">
+                        <div className="w-2 h-2 bg-cyber-blue rounded-full animate-pulse" />
+                        <p className="text-sm font-semibold">Waiting for payment...</p>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          if (qrData?.sessionId) {
+                            console.log('🔄 Manually checking payment status for:', qrData.sessionId)
+                            try {
+                              const { data, error } = await supabaseClient
+                                .from('qr_payment_sessions')
+                                .select('*')
+                                .eq('session_id', qrData.sessionId)
+                                .single()
+
+                              if (error) {
+                                console.error('Error fetching session:', error)
+                                return
+                              }
+
+                              if (data) {
+                                const session = data as PaymentSession
+                                console.log('📊 Manual check - Session status:', session.status)
+                                if (session.status === 'paid') {
+                                  setSessionStatus('paid')
+                                  setPaymentReceived(session)
+                                  setError(null)
+                                } else if (session.status === 'expired') {
+                                  setSessionStatus('expired')
+                                  setQrData(null)
+                                }
+                              }
+                            } catch (err) {
+                              console.error('Error manually checking status:', err)
+                            }
+                          }
+                        }}
+                        className="text-xs text-cyber-blue hover:text-cyber-blue/80 underline"
+                      >
+                        Check Status
+                      </button>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">
+                      Session ID: {qrData?.sessionId?.slice(0, 20)}...
+                    </p>
+                  </div>
+                )}
+
+                {(timeRemaining === 0 || sessionStatus === 'expired') && (
                   <div className="bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-3">
                     <p className="text-yellow-400 text-sm">
                       This QR code has expired. Generate a new one to continue.
@@ -337,6 +637,16 @@ export default function SellerPage() {
                     onClick={() => {
                       setQrData(null)
                       setError(null)
+                      setPaymentReceived(null)
+                      setSessionStatus('pending')
+                      if (subscriptionRef.current) {
+                        subscriptionRef.current.unsubscribe()
+                        subscriptionRef.current = null
+                      }
+                      if (pollIntervalRef.current) {
+                        clearInterval(pollIntervalRef.current)
+                        pollIntervalRef.current = null
+                      }
                     }}
                     className="px-4 py-2 text-sm text-gray-400 hover:text-white transition"
                   >
