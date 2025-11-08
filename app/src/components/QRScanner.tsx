@@ -198,7 +198,7 @@ export function QRScanner({
           if (!mounted) return
           try {
             await html5QrCode.start(
-              config,
+              config as string | MediaTrackConstraints,
               {
                 fps: fps,
                 qrbox: { width: 250, height: 250 },
