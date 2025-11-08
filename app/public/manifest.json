@@ -1,0 +1,42 @@
+{
+  "name": "BrewFi - Web3 Loyalty Rewards",
+  "short_name": "BrewFi",
+  "description": "Earn $BREWFI tokens with every coffee purchase on Avalanche",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#019a59",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "food", "lifestyle"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Buy Coffee",
+      "short_name": "Buy",
+      "description": "Purchase coffee and earn BREWFI tokens",
+      "url": "/buy",
+      "icons": [{ "src": "/logo/logo.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your BREWFI balance and rewards",
+      "url": "/dashboard",
+      "icons": [{ "src": "/logo/logo.png", "sizes": "96x96" }]
+    }
+  ]
+}

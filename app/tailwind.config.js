@@ -34,16 +34,19 @@ module.exports = {
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'glow': 'glow 2s ease-in-out infinite alternate',
+        'coin-spin': 'coinSpin 2s ease-in-out infinite',
       },
       keyframes: {
         glow: {
           '0%': { boxShadow: '0 0 5px #00f5ff, 0 0 10px #00f5ff' },
           '100%': { boxShadow: '0 0 20px #00f5ff, 0 0 30px #00f5ff, 0 0 40px #00f5ff' },
+        },
+        coinSpin: {
+          '0%, 100%': { transform: 'rotateY(0deg) scale(1)' },
+          '50%': { transform: 'rotateY(180deg) scale(1.1)' },
         }
       }
     },
   },
   plugins: [],
 }
-
-

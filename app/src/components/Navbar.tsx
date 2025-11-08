@@ -3,8 +3,10 @@
 import { usePathname } from 'next/navigation'
 import { Settings } from 'lucide-react'
 import Image from 'next/image'
+import { formatUnits } from 'viem'
 import { useSupabaseAuth } from '@/providers/SupabaseAuthProvider'
 import { useInvisibleWallet } from '@/providers/InvisibleWalletProvider'
+import { BREWFI_CONTRACT } from '@/config/contracts'
 
 // Navigation bar component
 
@@ -16,7 +18,7 @@ export function Navbar() {
   const isDappFlowPage = pathname === '/buy' || pathname === '/send' || pathname === '/receive'
   
   const { user } = useSupabaseAuth()
-  const { primaryAccount } = useInvisibleWallet()
+  const { primaryAccount, isReady } = useInvisibleWallet()
 
   // Extract username from email (part before @)
   const username = user?.email ? user.email.split('@')[0] : null
@@ -30,6 +32,15 @@ export function Navbar() {
   
   const slicedAddress = getSlicedAddress(primaryAccount?.address)
 
+  // Get BrewFi balance
+  const brewfiBalance = primaryAccount?.tokenBalances[BREWFI_CONTRACT.address]
+  const formattedBalance = brewfiBalance !== undefined 
+    ? parseFloat(formatUnits(brewfiBalance, 18)).toLocaleString('en-US', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      })
+    : '0'
+
   return (
     <nav className="flex justify-between items-center p-4 md:p-6 border-b border-cyber-blue/30">
       <div className="flex items-center space-x-6 md:space-x-8">
@@ -42,6 +53,30 @@ export function Navbar() {
       </div>
       
       <div className="flex flex-wrap gap-2 md:gap-4 items-center justify-end max-w-full">
+        {/* BrewFi Coin Balance - show when wallet is ready */}
+        {isReady && user && (
+          <div className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-gradient-to-r from-gray-900/90 to-gray-800/90 backdrop-blur-sm rounded-lg border border-cyber-green/40 shadow-lg shadow-cyber-green/20 hover:shadow-cyber-green/30 transition-all duration-300 group">
+            <div className="relative">
+              <Image
+                src="/images/brewficoingreen.png"
+                alt="BrewFi Coin"
+                width={24}
+                height={24}
+                className="w-5 h-5 md:w-6 md:h-6 animate-pulse-slow group-hover:scale-110 group-hover:rotate-12 transition-all duration-300"
+              />
+              <div className="absolute inset-0 bg-cyber-green/30 rounded-full blur-sm group-hover:blur-md group-hover:bg-cyber-green/50 transition-all duration-300"></div>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs text-gray-400 uppercase tracking-wider leading-none">
+                BREWFI
+              </span>
+              <span className="text-base md:text-lg font-bold text-cyber-green leading-tight neon-text">
+                {formattedBalance}
+              </span>
+            </div>
+          </div>
+        )}
+        
         {/* User info - show when logged in */}
         {user && (
           <div className="flex items-center gap-3 text-sm md:text-base">
