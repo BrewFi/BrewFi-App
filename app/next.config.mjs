@@ -1,8 +1,10 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const require = createRequire(import.meta.url);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -17,6 +19,8 @@ const nextConfig = {
     config.resolve.alias = {
       ...config.resolve.alias,
       '@react-native-async-storage/async-storage': path.resolve(__dirname, 'src/utils/async-storage-web.js'),
+      'sodium-native': require.resolve('sodium-javascript'),
+      'sodium-universal': path.resolve(__dirname, 'src/shims/sodium-universal.ts'),
     };
 
     return config;
