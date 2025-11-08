@@ -132,7 +132,7 @@ To enable Google login, you need to configure OAuth in both Google Cloud Console
 
 The redirect URL in your Google OAuth settings must match:
 - Production: `https://<your-project-ref>.supabase.co/auth/v1/callback`
-- The app will redirect users back to `/dapp/onboarding` after authentication
+- The app will redirect users back to `/onboarding` after authentication
 
 ### 4. Testing Google OAuth
 

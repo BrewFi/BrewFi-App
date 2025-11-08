@@ -6,11 +6,11 @@ import { BottomNav } from '@/components/BottomNav'
 import { Send as SendIcon } from 'lucide-react'
 import { useInvisibleWallet } from '@/providers/InvisibleWalletProvider'
 import { formatUnits, parseUnits } from 'viem'
-import { USDC_CONTRACT } from '@/config/contracts'
+import { USDT_CONTRACT } from '@/config/contracts'
 
 const TOKENS = [
   { id: 'AVAX' as const, label: 'AVAX', decimals: 18 },
-  { id: 'USDC' as const, label: 'USDC', decimals: 6 },
+  { id: 'USDT' as const, label: 'USDT', decimals: 6 },
 ]
 
 type TokenId = (typeof TOKENS)[number]['id']
@@ -25,9 +25,9 @@ export default function SendPage() {
 
   const balances = {
     AVAX: primaryAccount ? formatUnits(primaryAccount.balanceWei, 18) : '0.0',
-    USDC:
-      primaryAccount?.tokenBalances[USDC_CONTRACT.address] !== undefined
-        ? formatUnits(primaryAccount.tokenBalances[USDC_CONTRACT.address], 6)
+    USDT:
+      primaryAccount?.tokenBalances[USDT_CONTRACT.address] !== undefined
+        ? formatUnits(primaryAccount.tokenBalances[USDT_CONTRACT.address], 6)
         : '0.0',
   }
 
@@ -60,7 +60,7 @@ export default function SendPage() {
       } else {
         const result = await transferToken({
           index: 0,
-          token: USDC_CONTRACT.address,
+          token: USDT_CONTRACT.address,
           recipient: recipient as `0x${string}`,
           amount: parseUnits(amount, tokenMeta.decimals),
         })
@@ -85,7 +85,7 @@ export default function SendPage() {
           <SendIcon className="w-14 h-14 text-cyber-blue mx-auto" />
           <h1 className="text-4xl font-bold neon-text">Send Assets</h1>
           <p className="text-gray-400">
-            Transfer AVAX or USDC directly from your invisible wallet.
+            Transfer AVAX or USDT directly from your invisible wallet.
           </p>
         </div>
 

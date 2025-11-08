@@ -106,7 +106,7 @@ export function SupabaseAuthProvider({
     const { error } = await supabaseClient.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/dapp/onboarding`,
+        redirectTo: `${window.location.origin}/onboarding`,
       },
     });
     return { error: error ?? null };

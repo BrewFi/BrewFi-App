@@ -51,7 +51,7 @@ export default function DAppHome() {
             <div className="text-2xl lg:text-3xl font-bold text-cyber-blue">199</div>
             <div className="text-gray-400 text-xs lg:text-base">Active Users</div>
           </div>
-          <a href="/dapp/community" className="block">
+          <a href="/community" className="block">
             <button className="cyber-card p-4 lg:p-6 w-full hover:scale-105 hover:shadow-lg hover:shadow-cyber-blue/20 transition-all cursor-pointer">
               <div className="text-2xl lg:text-3xl font-bold text-cyber-blue">10</div>
               <div className="text-gray-400 text-xs lg:text-base">Coffee Shops</div>
@@ -68,4 +68,3 @@ export default function DAppHome() {
     </main>
   )
 }
-

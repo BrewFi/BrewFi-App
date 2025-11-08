@@ -5,8 +5,8 @@ import { useEffect } from "react";
 import { useSupabaseAuth } from "@/providers/SupabaseAuthProvider";
 import { useInvisibleWallet } from "@/providers/InvisibleWalletProvider";
 
-const ONBOARDING_PATH = "/dapp/onboarding";
-const HOME_PATH = "/dapp/home";
+const ONBOARDING_PATH = "/onboarding";
+const HOME_PATH = "/home";
 
 interface DappAccessGuardProps {
   children: React.ReactNode;

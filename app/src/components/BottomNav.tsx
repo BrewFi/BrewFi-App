@@ -10,17 +10,17 @@ export function BottomNav() {
   const pathname = usePathname()
 
   const navItems = [
-    { id: 'buy', label: 'Buy', icon: Coffee, path: '/dapp/buy' },
-    { id: 'swap', label: 'Swap', icon: ArrowLeftRight, path: '/dapp/swap' },
-    { id: 'send', label: 'Send', icon: Send, path: '/dapp/send' },
-    { id: 'receive', label: 'Receive', icon: Download, path: '/dapp/receive' },
+    { id: 'buy', label: 'Buy', icon: Coffee, path: '/buy' },
+    { id: 'swap', label: 'Swap', icon: ArrowLeftRight, path: '/swap' },
+    { id: 'send', label: 'Send', icon: Send, path: '/send' },
+    { id: 'receive', label: 'Receive', icon: Download, path: '/receive' },
   ]
 
   const handleNavigation = (path: string) => {
     router.push(path)
   }
 
-  const isQRActive = pathname === '/dapp/qr-pay'
+  const isQRActive = pathname === '/qr-pay'
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 w-full z-50 pb-safe">
@@ -96,7 +96,7 @@ export function BottomNav() {
             {/* Center QR Button - Circular */}
             <div className="relative mx-2">
               <button
-                onClick={() => handleNavigation('/dapp/qr-pay')}
+                onClick={() => handleNavigation('/qr-pay')}
                 className={`
                   relative w-14 h-14 rounded-full flex items-center justify-center
                   transition-all duration-300 ease-out transform

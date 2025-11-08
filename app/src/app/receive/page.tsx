@@ -26,15 +26,15 @@ export default function ReceivePage() {
 
       <div className="flex-1 px-8 pt-12 pb-6 max-w-3xl mx-auto w-full space-y-6 text-center">
         <h1 className="text-4xl font-bold neon-text">Receive Assets</h1>
-        <p className="text-gray-400 text-sm sm:text-base">
+        <p className="text-gray-400 text-sm sm:text-base p-10">
           Share your BrewFi invisible wallet address to receive AVAX, USDC, or $BREWFI.
         </p>
 
-        <div className="mx-auto w-64 h-64 rounded-2xl border-4 border-cyber-blue/40 flex items-center justify-center bg-white/5 p-4">
+        <div className="mx-auto w-64 h-64 rounded-2xl border-10 border-cyber-blue/40 flex items-center justify-center bg-white/5 p-10">
           {isReady && address ? <QRCode value={address} /> : <span className="text-xs text-gray-500">Wallet not ready</span>}
         </div>
 
-        <div className="text-sm text-gray-400 break-all">
+        <div className="text-sm text-gray-400 break-all p-5">
           {isReady && address ? address : 'Sign in to view your wallet address.'}
         </div>
 
