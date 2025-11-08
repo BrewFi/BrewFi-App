@@ -20,6 +20,7 @@ export default function DappOnboardingPage() {
   const {
     hydrated: walletHydrated,
     isReady: walletReady,
+    walletExists,
     loading: walletLoading,
     error: walletError,
     createWallet,
@@ -108,7 +109,21 @@ export default function DappOnboardingPage() {
       return;
     }
 
-    if (!walletReady && !creatingWallet) {
+    // If wallet exists and is ready, redirect to home
+    if (walletReady) {
+      router.replace("/dapp/home");
+      return;
+    }
+
+    // If wallet exists but not ready yet, wait for it to load
+    // Don't create a new wallet if one already exists
+    if (walletExists) {
+      // Wallet exists in DB but not fully loaded yet, wait
+      return;
+    }
+
+    // Only create wallet if it doesn't exist and we're not already creating one
+    if (!walletExists && !creatingWallet) {
       setCreatingWallet(true);
       createWallet()
         .then(() => {
@@ -122,13 +137,12 @@ export default function DappOnboardingPage() {
           });
           setCreatingWallet(false);
         });
-    } else if (walletReady) {
-      router.replace("/dapp/home");
     }
   }, [
     session,
     walletHydrated,
     walletReady,
+    walletExists,
     creatingWallet,
     createWallet,
     router,

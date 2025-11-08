@@ -44,6 +44,7 @@ export interface InvisibleWalletContextValue {
   hydrated: boolean;
   loading: boolean;
   isReady: boolean;
+  walletExists: boolean;
   accounts: AccountSummary[];
   primaryAccount: AccountSummary | null;
   error: string | null;
@@ -223,6 +224,12 @@ export function InvisibleWalletProvider({
       throw new Error("User must be signed in to create wallet");
     }
 
+    // Check if wallet already exists
+    const existingWallet = await fetchWalletRow(userId);
+    if (existingWallet?.seed_phrase) {
+      throw new Error("Wallet already exists. Cannot create a new wallet.");
+    }
+
     const mnemonic = generateMnemonic(english);
     const row: WalletRow = {
       user_id: userId,
@@ -314,11 +321,13 @@ export function InvisibleWalletProvider({
   const value = useMemo<InvisibleWalletContextValue>(() => {
     const primaryAccount = accounts[0] ?? null;
     const isReady = hydrated && Boolean(seedRef.current) && Boolean(primaryAccount);
+    const walletExists = Boolean(walletRow?.seed_phrase);
 
     return {
       hydrated,
       loading,
       isReady,
+      walletExists,
       accounts,
       primaryAccount,
       error,
@@ -328,7 +337,7 @@ export function InvisibleWalletProvider({
       transferToken,
       callContract,
     };
-  }, [accounts, callContract, createWallet, error, hydrated, loading, refresh, sendNative, transferToken]);
+  }, [accounts, callContract, createWallet, error, hydrated, loading, refresh, sendNative, transferToken, walletRow]);
 
   return (
     <InvisibleWalletContext.Provider value={value}>
