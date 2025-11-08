@@ -94,4 +94,3 @@ export async function getProductCount(): Promise<number> {
     return 0;
   }
 }
-

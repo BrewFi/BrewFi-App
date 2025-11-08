@@ -140,4 +140,3 @@ The edge function uses:
 - Verify JWT token is valid
 - Check `Authorization` header is set correctly
 - Ensure user is authenticated
-

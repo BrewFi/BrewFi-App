@@ -154,9 +154,9 @@ export class TetherWalletService {
 
   async transferToken({ index, transferMaxFee, ...args }: TokenTransferParams) {
     const account = await this.resolveAccount(index);
-    return account.transfer(args, {
-      transferMaxFee: transferMaxFee ?? this.transferMaxFee,
-    });
+    // Note: transferMaxFee is configured at the WalletManager level
+    // If a different fee is needed, it would require manager reconfiguration
+    return account.transfer(args);
   }
 
   async quoteTokenTransfer({ index, ...args }: TokenTransferParams): Promise<TransferQuote> {
