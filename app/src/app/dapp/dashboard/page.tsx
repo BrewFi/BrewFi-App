@@ -2,128 +2,83 @@
 
 import { Navbar } from '@/components/Navbar'
 import { BottomNav } from '@/components/BottomNav'
-import { useAccount, useBalance, useReadContract } from 'wagmi'
-import { BREWFI_CONTRACT, USDC_CONTRACT, PURCHASE_CONTRACT } from '@/config/contracts'
+import { useInvisibleWallet } from '@/providers/InvisibleWalletProvider'
+import { formatUnits } from 'viem'
+import { USDC_CONTRACT, BREWFI_CONTRACT } from '@/config/contracts'
 
-// Dashboard - User balance, buy coffee, redeem rewards
+// DApp Dashboard - Invisible wallet overview
 
 export default function DAppDashboard() {
-  const { address } = useAccount()
-  const { data: avaxBalance } = useBalance({ address, query: { enabled: !!address } })
-  const { data: usdcBalance } = useReadContract({
-    address: USDC_CONTRACT.address,
-    abi: USDC_CONTRACT.abi,
-    functionName: 'balanceOf',
-    args: address ? [address] : undefined,
-    query: { enabled: !!address }
-  })
-  const { data: brewfiBalance } = useReadContract({
-    address: BREWFI_CONTRACT.address,
-    abi: BREWFI_CONTRACT.abi,
-    functionName: 'balanceOf',
-    args: address ? [address] : undefined,
-    query: { enabled: !!address }
-  })
+  const { isReady, loading, primaryAccount, refresh } = useInvisibleWallet()
 
-  // Optional: contract treasury balances
-  const { data: contractTreasury } = useReadContract({
-    address: PURCHASE_CONTRACT.address,
-    abi: PURCHASE_CONTRACT.abi,
-    functionName: 'getBalances',
-  })
-
-  const avaxDisplay = avaxBalance ? (Number(avaxBalance.value) / 1e18).toFixed(4) : '—'
-  const usdcDisplay = typeof usdcBalance === 'bigint' ? (Number(usdcBalance) / 1e6).toFixed(2) : '—'
-  const brewfiDisplay = typeof brewfiBalance === 'bigint' ? (Number(brewfiBalance) / 1e18).toFixed(4) : '—'
-
-  const contractBrewfi = contractTreasury ? Number((contractTreasury as any).brewfiBalance) / 1e18 : undefined
-  const contractUsdc = contractTreasury ? Number((contractTreasury as any).usdcBalance) / 1e6 : undefined
-  const contractAvax = contractTreasury ? Number((contractTreasury as any).avaxBalance) / 1e18 : undefined
+  const avaxBalance = primaryAccount ? formatUnits(primaryAccount.balanceWei, 18) : '0.0'
+  const usdcBalance = primaryAccount?.tokenBalances[USDC_CONTRACT.address]
+  const brewfiBalance = primaryAccount?.tokenBalances[BREWFI_CONTRACT.address]
 
   return (
     <div className="min-h-screen pb-28">
       <Navbar />
       <div className="p-4 lg:p-8">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="cyber-card p-6 flex flex-col gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-white">Invisible Wallet</h2>
+              <p className="text-sm text-gray-400">
+                Custodial wallet managed via Supabase and the Tether Wallet Developer Kit.
+              </p>
+            </div>
 
-      {/* Balance Card */}
-      <div className="max-w-4xl mx-auto space-y-8">
-        <div className="cyber-card p-8 text-center space-y-4">
-          <div className="text-gray-400">Your Balances</div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-white">
-            <div className="bg-black/40 border border-cyber-blue/20 rounded-lg p-4">
-              <div className="text-gray-400 text-sm">AVAX</div>
-              <div className="text-2xl font-bold text-cyber-blue">{avaxDisplay}</div>
+            <div className="flex flex-col gap-2 text-sm text-gray-300">
+              <span>Status: {isReady ? 'Ready' : loading ? 'Loading…' : 'Pending setup'}</span>
+              <span className="break-all">
+                Address: {primaryAccount?.address ?? '—'}
+              </span>
             </div>
-            <div className="bg-black/40 border border-cyber-blue/20 rounded-lg p-4">
-              <div className="text-gray-400 text-sm">USDC</div>
-              <div className="text-2xl font-bold text-cyber-blue">{usdcDisplay}</div>
-            </div>
-            <div className="bg-black/40 border border-cyber-blue/20 rounded-lg p-4">
-              <div className="text-gray-400 text-sm">$BREWFI</div>
-              <div className="text-2xl font-bold text-cyber-blue">{brewfiDisplay}</div>
+
+            <div>
+              <button
+                onClick={refresh}
+                disabled={!isReady}
+                className="px-4 py-2 rounded-lg border border-cyber-blue/50 text-cyber-blue hover:bg-cyber-blue/10 transition disabled:opacity-50"
+              >
+                Refresh Balances
+              </button>
             </div>
           </div>
-          <div className="text-cyan-400 text-sm">Connect wallet to load live balances</div>
-        </div>
 
-        {contractTreasury !== undefined && (
-          <div className="cyber-card p-6">
-            <h3 className="text-xl font-bold mb-4 text-cyber-blue">Contract Treasury</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-white">
-              <div className="bg-black/40 border border-cyber-blue/20 rounded-lg p-4">
-                <div className="text-gray-400 text-sm">AVAX</div>
-                <div className="text-xl font-semibold text-cyber-blue">{contractAvax?.toFixed(4) ?? '—'}</div>
-              </div>
-              <div className="bg-black/40 border border-cyber-blue/20 rounded-lg p-4">
-                <div className="text-gray-400 text-sm">USDC</div>
-                <div className="text-xl font-semibold text-cyber-blue">{contractUsdc?.toFixed(2) ?? '—'}</div>
-              </div>
-              <div className="bg-black/40 border border-cyber-blue/20 rounded-lg p-4">
-                <div className="text-gray-400 text-sm">$BREWFI</div>
-                <div className="text-xl font-semibold text-cyber-blue">{contractBrewfi?.toFixed(4) ?? '—'}</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="grid grid-cols-2 gap-6">
-          <button className="cyber-card p-8 hover:bg-cyber-blue/10 transition-all group">
-            <div className="text-5xl mb-4 group-hover:animate-pulse">☕</div>
-            <div className="text-xl font-bold">Buy Coffee</div>
-            <div className="text-sm text-gray-400">Earn 10 $BREWFI</div>
-          </button>
-
-          <button className="cyber-card p-8 hover:bg-cyber-pink/10 transition-all group">
-            <div className="text-5xl mb-4 group-hover:animate-pulse">🎁</div>
-            <div className="text-xl font-bold">Redeem Voucher</div>
-            <div className="text-sm text-gray-400">Costs 100 $BREWFI</div>
-          </button>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="cyber-card p-6">
-          <h3 className="text-xl font-bold mb-4 text-cyber-blue">Recent Activity</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center border-b border-gray-800 pb-3">
-              <div>
-                <div className="font-semibold">☕ Coffee Purchase</div>
-                <div className="text-sm text-gray-400">Cyber Cafe</div>
-              </div>
-              <div className="text-cyber-blue">+10 $BREWFI</div>
-            </div>
-            <div className="flex justify-between items-center border-b border-gray-800 pb-3">
-              <div>
-                <div className="font-semibold">🎁 Voucher Redeemed</div>
-                <div className="text-sm text-gray-400">Neo Coffee House</div>
-              </div>
-              <div className="text-cyber-pink">-100 $BREWFI</div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <BalanceCard label="AVAX" value={avaxBalance} highlight="text-cyber-blue" />
+            <BalanceCard
+              label="USDC"
+              value={usdcBalance !== undefined ? formatUnits(usdcBalance, 6) : '0.0'}
+              highlight="text-emerald-400"
+            />
+            <BalanceCard
+              label="$BREWFI"
+              value={brewfiBalance !== undefined ? formatUnits(brewfiBalance, 18) : '0.0'}
+              highlight="text-cyber-pink"
+            />
           </div>
         </div>
-      </div>
       </div>
       <BottomNav />
+    </div>
+  )
+}
+
+function BalanceCard({
+  label,
+  value,
+  highlight,
+}: {
+  label: string
+  value: string
+  highlight: string
+}) {
+  return (
+    <div className="cyber-card p-6 space-y-2">
+      <div className="text-xs uppercase tracking-[0.3em] text-gray-500">{label}</div>
+      <div className={`text-3xl font-bold ${highlight}`}>{value}</div>
     </div>
   )
 }

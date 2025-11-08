@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import '../styles/globals.css'
-import { Web3Provider } from '@/providers/Web3Provider';
+import { SupabaseAuthProvider } from '@/providers/SupabaseAuthProvider'
+import { InvisibleWalletProvider } from '@/providers/InvisibleWalletProvider'
 
 
 export const metadata: Metadata = {
@@ -16,12 +17,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Web3Provider>
-          {children}
-        </Web3Provider>
+        <SupabaseAuthProvider>
+          <InvisibleWalletProvider>
+            {children}
+          </InvisibleWalletProvider>
+        </SupabaseAuthProvider>
       </body>
     </html>
   )
 }
-
-

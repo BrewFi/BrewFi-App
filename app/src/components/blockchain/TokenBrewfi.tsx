@@ -1,45 +1,33 @@
 "use client";
-import { useAccount, useReadContract } from "wagmi";
+
+import { formatUnits } from "viem";
+import { useInvisibleWallet } from "@/providers/InvisibleWalletProvider";
 import { BREWFI_CONTRACT } from "@/config/contracts";
 
 export default function TokenBrewfi() {
-  const { address } = useAccount();
+  const { primaryAccount, isReady } = useInvisibleWallet();
+  const brewfiBalance = primaryAccount?.tokenBalances[BREWFI_CONTRACT.address];
 
-  const { data: name } = useReadContract({
-    address: BREWFI_CONTRACT.address,
-    abi: BREWFI_CONTRACT.abi,
-    functionName: "name",
-  });
-
-  const { data: balance } = useReadContract({
-    address: BREWFI_CONTRACT.address,
-    abi: BREWFI_CONTRACT.abi,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
-    query: { enabled: !!address },
-  });
-
-  const { data: totalSupply } = useReadContract({
-    address: BREWFI_CONTRACT.address,
-    abi: BREWFI_CONTRACT.abi,
-    functionName: "totalSupply",
-  });
+  if (!isReady) {
+    return (
+      <div className="text-sm text-gray-500">
+        Invisible wallet loading. Connect via onboarding to view balances.
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-neutral-900 rounded-xl p-6 border border-neutral-800">
-      <h3 className="text-white text-lg mb-4">BrewFi Token Info</h3>
-
-      <div className="flex justify-between text-white">
-        <span>Name:</span>
-        <span>{name?.toString() || "..."}</span>
+    <div className="space-y-2 text-sm text-gray-200">
+      <div className="text-xs uppercase tracking-[0.3em] text-gray-500">
+        BrewFi Token Balance
       </div>
-      <div className="flex justify-between text-white">
-        <span>Your Balance:</span>
-        <span>{balance?.toString() || "0"}</span>
+      <div className="text-3xl font-bold text-cyber-blue">
+        {brewfiBalance !== undefined
+          ? formatUnits(brewfiBalance, 18)
+          : "0.0"}
       </div>
-      <div className="flex justify-between text-white">
-        <span>Total Supply:</span>
-        <span>{totalSupply?.toString() || "0"}</span>
+      <div className="text-xs text-gray-500 break-all">
+        {primaryAccount?.address ?? "—"}
       </div>
     </div>
   );

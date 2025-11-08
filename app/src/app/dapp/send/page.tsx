@@ -1,263 +1,161 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { Navbar } from '@/components/Navbar'
 import { BottomNav } from '@/components/BottomNav'
-import { Modal } from '@/components/ui/Modal'
-import { Send as SendIcon, Check } from 'lucide-react'
-import { useAccount, useBalance, useReadContract, useWriteContract, useWaitForTransactionReceipt, useSendTransaction } from 'wagmi'
-import { BREWFI_CONTRACT, USDC_CONTRACT } from '@/config/contracts'
-import { isAddress, parseUnits } from 'viem'
+import { Send as SendIcon } from 'lucide-react'
+import { useInvisibleWallet } from '@/providers/InvisibleWalletProvider'
+import { formatUnits, parseUnits } from 'viem'
+import { USDC_CONTRACT } from '@/config/contracts'
 
-type TokenId = 'AVAX' | 'USDC' | 'BREWFI'
+const TOKENS = [
+  { id: 'AVAX' as const, label: 'AVAX', decimals: 18 },
+  { id: 'USDC' as const, label: 'USDC', decimals: 6 },
+]
 
-const TOKEN_META: Record<TokenId, { name: string; decimals: number }> = {
-  AVAX: { name: 'AVAX', decimals: 18 },
-  USDC: { name: 'USDC', decimals: 6 },
-  BREWFI: { name: '$BREWFI', decimals: 18 },
-}
+type TokenId = (typeof TOKENS)[number]['id']
 
 export default function SendPage() {
-  const { address, isConnected } = useAccount()
-  const [selectedToken, setSelectedToken] = useState<{ id: TokenId; name: string }>(() => ({ id: 'BREWFI', name: TOKEN_META.BREWFI.name }))
+  const { isReady, primaryAccount, sendNative, transferToken } = useInvisibleWallet()
+  const [token, setToken] = useState<TokenId>('AVAX')
   const [recipient, setRecipient] = useState('')
   const [amount, setAmount] = useState('')
-  const [isSending, setIsSending] = useState(false)
-  const [showSuccess, setShowSuccess] = useState(false)
-  const [sendResult, setSendResult] = useState({ token: '', amount: '', recipient: '' })
-  const [pendingTokenName, setPendingTokenName] = useState('')
-  const [pendingAmount, setPendingAmount] = useState('')
-  const [pendingRecipient, setPendingRecipient] = useState('')
+  const [status, setStatus] = useState<'idle' | 'pending' | 'success' | 'error'>('idle')
+  const [message, setMessage] = useState<string | null>(null)
 
-  // Balances
-  const { data: avaxBalance } = useBalance({ address, query: { enabled: !!address } })
-  const { data: usdcBalance } = useReadContract({
-    address: USDC_CONTRACT.address,
-    abi: USDC_CONTRACT.abi,
-    functionName: 'balanceOf',
-    args: address ? [address] : undefined,
-    query: { enabled: !!address }
-  })
-  const { data: brewfiBalance } = useReadContract({
-    address: BREWFI_CONTRACT.address,
-    abi: BREWFI_CONTRACT.abi,
-    functionName: 'balanceOf',
-    args: address ? [address] : undefined,
-    query: { enabled: !!address }
-  })
-
-  const tokens = useMemo(() => [
-    { id: 'AVAX' as TokenId, name: TOKEN_META.AVAX.name, balance: avaxBalance ? Number(avaxBalance.value) / 1e18 : 0 },
-    { id: 'USDC' as TokenId, name: TOKEN_META.USDC.name, balance: typeof usdcBalance === 'bigint' ? Number(usdcBalance) / 1e6 : 0 },
-    { id: 'BREWFI' as TokenId, name: TOKEN_META.BREWFI.name, balance: typeof brewfiBalance === 'bigint' ? Number(brewfiBalance) / 1e18 : 0 },
-  ], [avaxBalance, usdcBalance, brewfiBalance])
-
-  const selectedTokenBalance = useMemo(() => {
-    const t = tokens.find(t => t.id === selectedToken.id)
-    return t?.balance ?? 0
-  }, [tokens, selectedToken])
-
-  const handleMaxClick = () => {
-    setAmount(selectedTokenBalance.toString())
+  const balances = {
+    AVAX: primaryAccount ? formatUnits(primaryAccount.balanceWei, 18) : '0.0',
+    USDC:
+      primaryAccount?.tokenBalances[USDC_CONTRACT.address] !== undefined
+        ? formatUnits(primaryAccount.tokenBalances[USDC_CONTRACT.address], 6)
+        : '0.0',
   }
-
-  const isValidAddress = (addr: string) => isAddress(addr)
-
-  // Writers
-  const { writeContract, data: erc20Hash, isPending: isErc20Pending, error: erc20Error } = useWriteContract()
-  const { sendTransaction, data: avaxHash } = useSendTransaction()
-  const { isLoading: isErc20Confirming, isSuccess: isErc20Success } = useWaitForTransactionReceipt({ hash: erc20Hash })
-  const { isLoading: isAvaxConfirming, isSuccess: isAvaxSuccess } = useWaitForTransactionReceipt({ hash: avaxHash })
-
-  // Stop sending and show success when a tx confirms
-  useEffect(() => {
-    if (isErc20Success || isAvaxSuccess) {
-      setIsSending(false)
-      setSendResult({ token: pendingTokenName, amount: pendingAmount, recipient: pendingRecipient })
-      setShowSuccess(true)
-    }
-  }, [isErc20Success, isAvaxSuccess, pendingTokenName, pendingAmount, pendingRecipient])
-
-  // Stop spinner on error
-  useEffect(() => {
-    if (erc20Error) setIsSending(false)
-  }, [erc20Error])
 
   const handleSend = async () => {
-    if (!isValidAddress(recipient)) {
-      alert('Please enter a valid wallet address')
+    if (!isReady) {
+      setStatus('error')
+      setMessage('Invisible wallet not ready')
+      return
+    }
+    if (!recipient || !amount) {
+      setStatus('error')
+      setMessage('Recipient and amount are required')
       return
     }
 
-    if (parseFloat(amount) <= 0 || parseFloat(amount) > selectedTokenBalance) {
-      alert('Invalid amount')
-      return
-    }
-
-    if (!isConnected || !address) {
-      alert('Connect wallet')
-      return
-    }
+    const tokenMeta = TOKENS.find((t) => t.id === token)!
 
     try {
-      setIsSending(true)
-      setPendingTokenName(selectedToken.name)
-      setPendingAmount(amount)
-      setPendingRecipient(recipient)
+      setStatus('pending')
+      setMessage(null)
 
-      const decimals = TOKEN_META[selectedToken.id].decimals
-      const amountWei = parseUnits(amount, decimals)
-
-      if (selectedToken.id === 'AVAX') {
-        sendTransaction({ to: recipient as `0x${string}`, value: amountWei })
-      } else if (selectedToken.id === 'USDC') {
-        writeContract({
-          address: USDC_CONTRACT.address,
-          abi: USDC_CONTRACT.abi,
-          functionName: 'transfer',
-          args: [recipient as `0x${string}`, amountWei]
+      if (token === 'AVAX') {
+        const result = await sendNative({
+          index: 0,
+          to: recipient as `0x${string}`,
+          value: parseUnits(amount, tokenMeta.decimals),
         })
+        setStatus('success')
+        setMessage(`Tx hash: ${result.hash}`)
       } else {
-        writeContract({
-          address: BREWFI_CONTRACT.address,
-          abi: BREWFI_CONTRACT.abi,
-          functionName: 'transfer',
-          args: [recipient as `0x${string}`, amountWei]
+        const result = await transferToken({
+          index: 0,
+          token: USDC_CONTRACT.address,
+          recipient: recipient as `0x${string}`,
+          amount: parseUnits(amount, tokenMeta.decimals),
         })
+        setStatus('success')
+        setMessage(`Tx hash: ${result.hash}`)
       }
-    } catch (e: any) {
-      alert(e?.message || 'Transaction failed')
-    } finally {
-      // Keep spinner until confirmation or error effect clears it
-    }
-  }
 
-  const handleCloseSuccess = () => {
-    setShowSuccess(false)
-    setRecipient('')
-    setAmount('')
+      setAmount('')
+      setRecipient('')
+    } catch (err) {
+      setStatus('error')
+      setMessage((err as Error).message ?? 'Unable to send transaction')
+    }
   }
 
   return (
     <main className="min-h-screen flex flex-col pb-32 bg-black">
       <Navbar />
 
-      <div className="flex-1 px-8 pt-8 pb-6 max-w-3xl mx-auto w-full">
-        <div className="space-y-6">
-          <div className="text-center space-y-2">
-            <h1 className="text-4xl lg:text-5xl font-bold neon-text">
-              Send Assets
-            </h1>
-            <p className="text-gray-400">Send tokens or crypto to friends</p>
-          </div>
+      <div className="flex-1 px-8 pt-8 pb-6 max-w-3xl mx-auto w-full space-y-6">
+        <div className="text-center space-y-2">
+          <SendIcon className="w-14 h-14 text-cyber-blue mx-auto" />
+          <h1 className="text-4xl font-bold neon-text">Send Assets</h1>
+          <p className="text-gray-400">
+            Transfer AVAX or USDC directly from your invisible wallet.
+          </p>
+        </div>
 
-          {/* Token Selection Tabs */}
+        <div className="cyber-card p-6 space-y-5">
           <div className="flex gap-2">
-              {tokens.map(token => (
+            {TOKENS.map((item) => (
               <button
-                key={token.id}
-                onClick={() => setSelectedToken({ id: token.id as TokenId, name: token.name })}
+                key={item.id}
+                onClick={() => setToken(item.id)}
                 className={`flex-1 py-3 px-4 rounded-lg font-semibold transition-all ${
-                  selectedToken.id === token.id
+                  token === item.id
                     ? 'bg-cyber-blue text-black shadow-lg shadow-cyber-blue/50'
                     : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                 }`}
               >
-                <div className="text-lg">{token.name}</div>
-                <div className="text-xs opacity-75">{token.balance.toFixed(4)}</div>
+                {item.label}
               </button>
             ))}
           </div>
 
-          {/* Send Form */}
-          <div className="cyber-card p-6 space-y-6">
-            {/* Recipient Address */}
-            <div className="space-y-2">
-              <label className="block text-gray-400 text-sm">Recipient Address</label>
-              <input
-                type="text"
-                value={recipient}
-                onChange={(e) => setRecipient(e.target.value)}
-                placeholder="0x..."
-                className="w-full bg-black/50 border border-cyber-blue/30 rounded-lg px-4 py-3 text-white focus:border-cyber-blue focus:outline-none"
-              />
-            </div>
-
-            {/* Amount */}
-            <div className="space-y-2">
-              <label className="block text-gray-400 text-sm">Amount</label>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0.00"
-                  className="flex-1 bg-black/50 border border-cyber-blue/30 rounded-lg px-4 py-3 text-white focus:border-cyber-blue focus:outline-none"
-                />
-                <div className="px-4 py-3 bg-black/50 border border-cyber-blue/30 rounded-lg text-cyber-blue font-semibold">{selectedToken.name}</div>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="text-sm text-gray-500">
-                  Balance: {selectedTokenBalance.toFixed(6)} {selectedToken.name}
-                </div>
-                <button
-                  onClick={handleMaxClick}
-                  className="text-sm text-cyber-blue hover:brightness-110 font-semibold"
-                >
-                  Max
-                </button>
-              </div>
-            </div>
-
-            {/* Send Button */}
-            <button
-              onClick={handleSend}
-              disabled={!recipient || !amount || parseFloat(amount) <= 0 || isSending || !isConnected}
-              className="w-full bg-cyber-blue text-black font-bold py-4 rounded-lg hover:shadow-lg hover:shadow-cyber-blue/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 hover:brightness-110"
-            >
-              {isSending || isErc20Pending || isErc20Confirming || isAvaxConfirming ? <>Sending...</> : <><SendIcon className="w-5 h-5" />Send {selectedToken.name}</>}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Success Modal */}
-      <Modal isOpen={showSuccess} onClose={handleCloseSuccess}>
-        <div className="text-center space-y-6">
-          <div className="w-16 h-16 bg-cyber-blue/20 rounded-full flex items-center justify-center mx-auto">
-            <Check className="w-10 h-10 text-cyber-blue drop-shadow-[0_0_8px_rgba(0,245,255,0.6)]" />
-          </div>
-          
-          <div>
-            <h2 className="text-3xl font-bold text-white mb-2">Transaction Sent!</h2>
-            <p className="text-gray-400">Your transfer has been completed successfully</p>
+          <div className="text-sm text-gray-500">
+            Balance: {balances[token]} {token}
           </div>
 
-          <div className="bg-black/50 rounded-lg p-4 space-y-2 text-left border border-cyber-blue/30">
-            <div className="flex justify-between">
-              <span className="text-gray-400">Token:</span>
-              <span className="text-cyber-blue font-semibold">{sendResult.token}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">Amount:</span>
-              <span className="text-cyber-blue font-semibold">{sendResult.amount}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-400">To:</span>
-              <span className="text-cyber-blue font-semibold text-xs">
-                {sendResult.recipient.slice(0, 10)}...{sendResult.recipient.slice(-8)}
-              </span>
-            </div>
+          <div className="space-y-2">
+            <label className="text-sm text-gray-400" htmlFor="recipient">
+              Recipient Address
+            </label>
+            <input
+              id="recipient"
+              value={recipient}
+              onChange={(event) => setRecipient(event.target.value)}
+              placeholder="0x..."
+              className="w-full bg-black/50 border border-cyber-blue/30 rounded-lg px-4 py-3 text-sm text-white focus:border-cyber-blue focus:outline-none"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm text-gray-400" htmlFor="amount">
+              Amount
+            </label>
+            <input
+              id="amount"
+              type="number"
+              min="0"
+              step="any"
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+              placeholder="0.00"
+              className="w-full bg-black/50 border border-cyber-blue/30 rounded-lg px-4 py-3 text-sm text-white focus:border-cyber-blue focus:outline-none"
+            />
           </div>
 
           <button
-            onClick={handleCloseSuccess}
-            className="w-full bg-cyber-blue text-black font-bold py-3 rounded-lg hover:shadow-lg hover:shadow-cyber-blue/50 transition-all hover:brightness-110"
+            type="button"
+            onClick={handleSend}
+            disabled={!isReady || status === 'pending'}
+            className="w-full bg-cyber-blue text-black font-bold py-3 rounded-lg hover:brightness-110 transition disabled:opacity-50"
           >
-            OK
+            {status === 'pending' ? 'Sending...' : `Send ${token}`}
           </button>
+
+          {status === 'success' && message && (
+            <div className="text-xs text-green-400 break-all">{message}</div>
+          )}
+          {status === 'error' && message && (
+            <div className="text-xs text-red-400 break-all">{message}</div>
+          )}
         </div>
-      </Modal>
+      </div>
 
       <BottomNav />
     </main>

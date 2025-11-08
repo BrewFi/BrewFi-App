@@ -1,335 +1,336 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useAccount, useWriteContract, useReadContract, useWaitForTransactionReceipt } from "wagmi";
-import { PURCHASE_CONTRACT, USDC_CONTRACT } from "@/config/contracts";
-import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+
+import { useState, useMemo, useEffect } from "react";
+import { formatUnits, encodeFunctionData } from "viem";
+import { USDC_CONTRACT, PURCHASE_CONTRACT } from "@/config/contracts";
+import { useInvisibleWallet } from "@/providers/InvisibleWalletProvider";
+import { createContractReader } from "@/lib/contractReader";
+import { Loader2, CheckCircle2, AlertCircle, ExternalLink } from "lucide-react";
 
 interface BuyWithUSDCProps {
   productId: number;
-  priceUSD: string; // Price in USD (as string to handle big numbers, scaled by 1e6 for USDC)
+  priceUSD: string; // USDC price scaled by 1e6
   onSuccess?: () => void;
 }
 
-type TransactionStep = "idle" | "approving" | "purchasing" | "success" | "error";
+type StepState = "idle" | "checking" | "approving" | "purchasing" | "success" | "error";
 
-export default function BuyWithUSDC({ productId, priceUSD, onSuccess }: BuyWithUSDCProps) {
-  const { address, isConnected } = useAccount();
-  const [step, setStep] = useState<TransactionStep>("idle");
-  const [errorMessage, setErrorMessage] = useState<string>("");
-  const [errorDetails, setErrorDetails] = useState<string>("");
-  const [showErrorDetails, setShowErrorDetails] = useState<boolean>(false);
+export default function BuyWithUSDC({
+  productId,
+  priceUSD,
+  onSuccess,
+}: BuyWithUSDCProps) {
+  const { isReady, primaryAccount, callContract, refresh } = useInvisibleWallet();
+  const [status, setStatus] = useState<StepState>("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [approvalHash, setApprovalHash] = useState<string | null>(null);
+  const [checkingBalance, setCheckingBalance] = useState(false);
+  const [refreshingBalance, setRefreshingBalance] = useState(false);
 
-  // Convert price to BigInt (priceUSD is in USDC format, 6 decimals)
   const priceAmount = BigInt(priceUSD);
+  const humanPrice = formatUnits(priceAmount, 6);
 
-  // Read USDC balance
-  const { data: usdcBalance, refetch: refetchBalance } = useReadContract({
-    address: USDC_CONTRACT.address,
-    abi: USDC_CONTRACT.abi,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
-    query: { enabled: !!address && isConnected },
-  });
+  // Get USDC balance from primary account
+  const usdcBalance = useMemo(() => {
+    if (!primaryAccount) return 0n;
+    return primaryAccount.tokenBalances[USDC_CONTRACT.address] ?? 0n;
+  }, [primaryAccount]);
 
-  // Read current allowance
-  const { data: allowance, refetch: refetchAllowance } = useReadContract({
-    address: USDC_CONTRACT.address,
-    abi: USDC_CONTRACT.abi,
-    functionName: "allowance",
-    args: address && isConnected ? [address, PURCHASE_CONTRACT.address] : undefined,
-    query: { enabled: !!address && isConnected },
-  });
+  const hasEnoughBalance = useMemo(() => {
+    return usdcBalance >= priceAmount;
+  }, [usdcBalance, priceAmount]);
 
-  // Approve transaction
-  const {
-    writeContract: writeApprove,
-    data: approveHash,
-    isPending: isApprovePending,
-    error: approveError,
-  } = useWriteContract();
+  const balanceDisplay = formatUnits(usdcBalance, 6);
+  const shortfall = hasEnoughBalance ? 0n : priceAmount - usdcBalance;
+  const shortfallDisplay = formatUnits(shortfall, 6);
 
-  // Purchase transaction
-  const {
-    writeContract: writePurchase,
-    data: purchaseHash,
-    isPending: isPurchasePending,
-    error: purchaseError,
-  } = useWriteContract();
-
-  // Wait for approve transaction
-  const {
-    isLoading: isApproveConfirming,
-    isSuccess: isApproveSuccess,
-    error: approveReceiptError,
-  } = useWaitForTransactionReceipt({
-    hash: approveHash,
-  });
-
-  // Wait for purchase transaction
-  const {
-    isLoading: isPurchaseConfirming,
-    isSuccess: isPurchaseSuccess,
-    error: purchaseReceiptError,
-  } = useWaitForTransactionReceipt({
-    hash: purchaseHash,
-  });
-
-  // Narrow read results to bigint
-  const allowanceBig = typeof allowance === 'bigint' ? allowance : undefined;
-  const usdcBalanceBig = typeof usdcBalance === 'bigint' ? usdcBalance : undefined;
-
-  // Check if approval is needed
-  const needsApproval = allowanceBig !== undefined && allowanceBig < priceAmount;
-
-  // Handle approval flow - trigger purchase automatically after approval
+  // Refresh balance after successful purchase (wait for transaction confirmation)
   useEffect(() => {
-    if (isApproveSuccess && !isPurchasePending && !purchaseHash) {
-      setStep("purchasing");
-      refetchAllowance();
-      // Small delay to ensure allowance is updated
-      setTimeout(() => {
-        writePurchase({
-          address: PURCHASE_CONTRACT.address,
-          abi: PURCHASE_CONTRACT.abi,
-          functionName: "purchaseWithUSDC",
-          args: [BigInt(productId)],
-        });
-      }, 1000);
+    if (status === "success" && txHash) {
+      const waitAndRefresh = async () => {
+        setRefreshingBalance(true);
+        try {
+          const client = createContractReader();
+          // Wait for transaction to be confirmed
+          await client.waitForTransactionReceipt({
+            hash: txHash as `0x${string}`,
+            timeout: 30_000, // 30 seconds timeout
+          });
+          // Wait a bit more for balance to update on-chain
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+          // Refresh balance
+          await refresh();
+          // Give it a moment for state to update
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        } catch (err) {
+          console.error("Error waiting for transaction confirmation:", err);
+          // Still try to refresh even if wait fails
+          setTimeout(async () => {
+            await refresh();
+            setRefreshingBalance(false);
+          }, 5000);
+          return;
+        }
+        setRefreshingBalance(false);
+      };
+      waitAndRefresh();
     }
-  }, [isApproveSuccess, isPurchasePending, purchaseHash, refetchAllowance, writePurchase, productId]);
-
-  // Handle purchase success
-  useEffect(() => {
-    if (isPurchaseSuccess) {
-      setStep("success");
-      refetchBalance();
-      refetchAllowance();
-      if (onSuccess) {
-        setTimeout(() => onSuccess(), 2000);
-      }
-    }
-  }, [isPurchaseSuccess, onSuccess, refetchBalance, refetchAllowance]);
-
-  // Handle errors
-  useEffect(() => {
-    const error = approveError || approveReceiptError || purchaseError || purchaseReceiptError;
-    if (error) {
-      setStep("error");
-      const rawMessage = (error as any)?.shortMessage || (error as any)?.message || String(error);
-      const summary = summarizeErrorMessage(rawMessage);
-      setErrorMessage(summary);
-      setErrorDetails(rawMessage);
-      setShowErrorDetails(false);
-    }
-  }, [approveError, approveReceiptError, purchaseError, purchaseReceiptError]);
-
-  const handleApprove = async () => {
-    if (!isConnected || !address) {
-      setErrorMessage("Please connect your wallet");
-      return;
-    }
-
-    setStep("approving");
-    setErrorMessage("");
-
-    try {
-      writeApprove({
-        address: USDC_CONTRACT.address,
-        abi: USDC_CONTRACT.abi,
-        functionName: "approve",
-        args: [PURCHASE_CONTRACT.address, priceAmount],
-      });
-    } catch (error: any) {
-      setStep("error");
-      setErrorMessage(error.message || "Failed to approve USDC");
-    }
-  };
+  }, [status, txHash, refresh]);
 
   const handlePurchase = async () => {
-    if (!isConnected || !address) {
-      setErrorMessage("Please connect your wallet");
+    if (!isReady || !primaryAccount) {
+      setError("Wallet not ready yet.");
       return;
     }
 
-    setStep("purchasing");
-    setErrorMessage("");
+    if (!hasEnoughBalance) {
+      setError(`Insufficient USDC balance. Need ${humanPrice} USDC, but only have ${balanceDisplay} USDC.`);
+      return;
+    }
+
+    setStatus("checking");
+    setError(null);
+    setCheckingBalance(true);
 
     try {
-      writePurchase({
-        address: PURCHASE_CONTRACT.address,
+      const client = createContractReader();
+
+      // Check current allowance
+      const currentAllowance = (await client.readContract({
+        address: USDC_CONTRACT.address,
+        abi: USDC_CONTRACT.abi,
+        functionName: "allowance",
+        args: [primaryAccount.address as `0x${string}`, PURCHASE_CONTRACT.address],
+      })) as bigint;
+
+      setCheckingBalance(false);
+
+      // Approve if needed
+      if (currentAllowance < priceAmount) {
+        setStatus("approving");
+        const approveData = encodeFunctionData({
+          abi: USDC_CONTRACT.abi,
+          functionName: "approve",
+          args: [PURCHASE_CONTRACT.address, priceAmount],
+        });
+
+        try {
+          const approveResult = await callContract({
+            to: USDC_CONTRACT.address,
+            data: approveData,
+          });
+          setApprovalHash(approveResult.hash);
+          
+          // Wait a moment for the approval transaction to be mined
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        } catch (approveErr) {
+          setStatus("error");
+          setError(
+            `Approval failed: ${approveErr instanceof Error ? approveErr.message : "Unknown error"}`,
+          );
+          return;
+        }
+      }
+
+      setStatus("purchasing");
+
+      // Encode the purchase function call
+      const purchaseData = encodeFunctionData({
         abi: PURCHASE_CONTRACT.abi,
         functionName: "purchaseWithUSDC",
         args: [BigInt(productId)],
       });
-    } catch (error: any) {
-      setStep("error");
-      setErrorMessage(error.message || "Failed to process purchase");
+
+      // Call the purchase function
+      const result = await callContract({
+        to: PURCHASE_CONTRACT.address,
+        data: purchaseData,
+      });
+
+      setStatus("success");
+      setTxHash(result.hash);
+      
+      // Note: Balance refresh will happen in useEffect after transaction confirmation
+      
+      if (onSuccess) {
+        // Delay onSuccess to allow transaction to be processed
+        setTimeout(() => {
+          onSuccess();
+        }, 1000);
+      }
+    } catch (err) {
+      setStatus("error");
+      setError((err as Error).message ?? "Unable to complete purchase");
+      setCheckingBalance(false);
     }
   };
 
-  const handleBuy = async () => {
-    if (needsApproval) {
-      await handleApprove();
-    } else {
-      await handlePurchase();
-    }
-  };
-
-  // Check if user has enough balance
-  const hasEnoughBalance = usdcBalanceBig !== undefined && usdcBalanceBig >= priceAmount;
-
-  // Determine button text and state
-  const getButtonText = () => {
-    if (!isConnected) return "Connect Wallet";
-    if (!hasEnoughBalance) return "Insufficient USDC Balance";
-    if (step === "approving" || isApprovePending || isApproveConfirming)
-      return "Approving USDC...";
-    if (step === "purchasing" || isPurchasePending || isPurchaseConfirming)
-      return "Processing Purchase...";
-    if (step === "success") return "Purchase Complete! 🎉";
-    if (needsApproval) return "Approve & Buy";
-    return "Buy with USDC";
-  };
-
-  const isButtonDisabled =
-    !isConnected ||
-    !hasEnoughBalance ||
-    step === "approving" ||
-    step === "purchasing" ||
-    isApprovePending ||
-    isPurchasePending ||
-    isApproveConfirming ||
-    isPurchaseConfirming ||
-    step === "success";
-
-  function summarizeErrorMessage(message: string): string {
-    const msg = message || "";
-    const lower = msg.toLowerCase();
-    if (lower.includes("user rejected")) return "You rejected the request in your wallet.";
-    if (lower.includes("insufficient funds")) return "Insufficient funds for gas or token balance.";
-    if (lower.includes("insufficient allowance")) return "Insufficient allowance. Please approve USDC first.";
-    if (lower.includes("nonce")) return "Nonce issue. Try again or reset your wallet nonce.";
-    if (lower.includes("replacement transaction underpriced")) return "Replacement transaction underpriced. Increase gas and retry.";
-    if (lower.includes("execution reverted")) return "Transaction reverted by contract.";
-    if (lower.includes("call exception") || lower.includes("contract call")) return "Contract call failed. Please retry.";
-    if (lower.includes("network")) return "Network error. Check your connection and chain selection.";
-    return "Transaction failed. Please try again.";
-  }
+  const isProcessing = status === "checking" || status === "approving" || status === "purchasing";
+  const isDisabled = !isReady || !hasEnoughBalance || isProcessing;
 
   return (
-    <div className="space-y-4">
-      {/* USDC Balance Display */}
-      {isConnected && usdcBalanceBig !== undefined && (
-        <div className="bg-neutral-800/50 rounded-lg p-3 border border-neutral-700">
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-400">Your USDC Balance:</span>
-            <span className="text-white font-semibold">
-              {(Number(usdcBalanceBig) / 1e6).toFixed(2)} USDC
+    <div className="space-y-3">
+      {/* Balance Display */}
+      <div className="bg-black/50 border border-cyber-blue/30 rounded-lg p-3 space-y-2">
+        {!isReady && (
+          <div className="text-xs text-yellow-400 text-center py-1">
+            Wallet not connected
+          </div>
+        )}
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-gray-400">Your USDC Balance:</span>
+          <div className="flex items-center gap-2">
+            <span className={`font-semibold ${hasEnoughBalance ? "text-cyber-blue" : "text-red-400"}`}>
+              {balanceDisplay} USDC
             </span>
+            <button
+              type="button"
+              onClick={async () => {
+                setRefreshingBalance(true);
+                await refresh();
+                setTimeout(() => setRefreshingBalance(false), 1000);
+              }}
+              disabled={refreshingBalance || !isReady}
+              className="p-1 hover:bg-cyber-blue/20 rounded transition disabled:opacity-50"
+              title="Refresh balance"
+            >
+              <Loader2 className={`w-3 h-3 ${refreshingBalance ? "animate-spin" : ""}`} />
+            </button>
           </div>
-          <div className="flex justify-between items-center text-sm mt-1">
-            <span className="text-gray-400">Required:</span>
-            <span className="text-cyber-blue font-semibold">
-              {(Number(priceAmount) / 1e6).toFixed(2)} USDC
-            </span>
+        </div>
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-gray-400">Price:</span>
+          <span className="text-cyber-blue font-semibold">{humanPrice} USDC</span>
+        </div>
+        {!hasEnoughBalance && (
+          <div className="flex justify-between items-center text-xs pt-1 border-t border-red-500/20">
+            <span className="text-red-400">Shortfall:</span>
+            <span className="text-red-400 font-semibold">{shortfallDisplay} USDC</span>
+          </div>
+        )}
+      </div>
+
+      {/* Status Messages */}
+      {status === "approving" && (
+        <div className="bg-cyber-blue/10 border border-cyber-blue/30 rounded-lg p-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Loader2 className="w-4 h-4 text-cyber-blue animate-spin" />
+            <span className="text-cyber-blue">Approving USDC spending...</span>
           </div>
         </div>
       )}
 
-      {/* Transaction Status */}
-      {(step === "approving" || step === "purchasing") && (
-        <div className="bg-cyber-blue/10 border border-cyber-blue/30 rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <Loader2 className="w-5 h-5 text-cyber-blue animate-spin" />
-            <div className="flex-1">
-              <div className="text-white font-semibold">
-                {step === "approving" ? "Approving USDC..." : "Processing Purchase..."}
-              </div>
-              <div className="text-gray-400 text-sm">
-                {step === "approving"
-                  ? "Please confirm the transaction in your wallet"
-                  : "Your purchase is being processed"}
-              </div>
-            </div>
+      {status === "purchasing" && (
+        <div className="bg-cyber-blue/10 border border-cyber-blue/30 rounded-lg p-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Loader2 className="w-4 h-4 text-cyber-blue animate-spin" />
+            <span className="text-cyber-blue">Processing purchase...</span>
           </div>
         </div>
       )}
 
-      {/* Success Message */}
-      {step === "success" && (
-        <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 text-green-500" />
-            <div className="flex-1">
-              <div className="text-white font-semibold">
-                Purchase complete! 🎉 BrewFi rewards earned ✅
-              </div>
-              <div className="text-gray-400 text-sm">Transaction confirmed on blockchain</div>
-            </div>
+      {status === "success" && (
+        <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3">
+          <div className="flex items-center gap-2 text-sm text-green-400">
+            <CheckCircle2 className="w-4 h-4" />
+            <span className="font-semibold">Purchase successful! 🎉</span>
           </div>
-        </div>
-      )}
-
-      {/* Error Message */}
-      {step === "error" && errorMessage && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-500 mt-0.5" />
-            <div className="flex-1">
-              <div className="flex items-center justify-between gap-3">
-                <div className="text-white font-semibold">Transaction Failed</div>
-                {errorDetails && (
-                  <button
-                    type="button"
-                    onClick={() => setShowErrorDetails(v => !v)}
-                    className="text-xs text-red-300/80 hover:text-red-200 underline-offset-2 hover:underline"
-                  >
-                    {showErrorDetails ? "Hide details" : "Show details"}
-                  </button>
-                )}
-              </div>
-              <div className="text-red-300 text-sm mt-1">{errorMessage}</div>
-              {showErrorDetails && errorDetails && (
-                <pre className="mt-3 text-xs text-red-200/80 bg-black/30 border border-red-500/20 rounded-md p-3 overflow-auto max-h-40 whitespace-pre-wrap">
-{errorDetails}
-                </pre>
-              )}
+          {refreshingBalance && (
+            <div className="flex items-center gap-2 text-xs text-green-300 mt-1">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              <span>Updating balance...</span>
             </div>
-          </div>
+          )}
+          {!refreshingBalance && (
+            <div className="text-xs text-green-300 mt-1">
+              Balance updated!
+            </div>
+          )}
         </div>
       )}
 
       {/* Buy Button */}
       <button
-        onClick={handleBuy}
-        disabled={isButtonDisabled}
-        className={`w-full py-4 px-6 rounded-lg font-bold text-lg transition-all duration-300 flex items-center justify-center gap-2 ${
-          step === "success"
+        type="button"
+        onClick={handlePurchase}
+        disabled={isDisabled}
+        className={`w-full px-4 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+          status === "success"
             ? "bg-green-500/20 border border-green-500/50 text-green-400 cursor-not-allowed"
-            : isButtonDisabled
+            : isDisabled
             ? "bg-gray-600/50 border border-gray-600 text-gray-400 cursor-not-allowed"
             : "bg-cyber-blue text-black hover:bg-cyber-blue/90 hover:shadow-lg hover:shadow-cyber-blue/50 hover:scale-[1.02]"
         }`}
       >
-        {(step === "approving" ||
-          step === "purchasing" ||
-          isApprovePending ||
-          isPurchasePending ||
-          isApproveConfirming ||
-          isPurchaseConfirming) && <Loader2 className="w-5 h-5 animate-spin" />}
-        {step === "success" && <CheckCircle2 className="w-5 h-5" />}
-        {getButtonText()}
+        {isProcessing && <Loader2 className="w-5 h-5 animate-spin" />}
+        {status === "success" && <CheckCircle2 className="w-5 h-5" />}
+        {status === "checking" && "Checking..."}
+        {status === "approving" && "Approving..."}
+        {status === "purchasing" && "Purchasing..."}
+        {status === "success" && "Purchase Complete!"}
+        {status === "idle" && !hasEnoughBalance && "Insufficient Balance"}
+        {status === "idle" && hasEnoughBalance && "Buy with USDC"}
+        {status === "error" && "Try Again"}
       </button>
 
       {/* Transaction Hashes */}
-      {approveHash && (
-        <div className="text-xs text-gray-500 text-center">
-          Approval: {approveHash.slice(0, 10)}...{approveHash.slice(-8)}
+      {approvalHash && (
+        <div className="text-xs text-gray-500 space-y-1">
+          <div className="flex items-center gap-2">
+            <span>Approval:</span>
+            <a
+              href={`https://testnet.snowtrace.io/tx/${approvalHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-cyber-blue hover:underline flex items-center gap-1"
+            >
+              {approvalHash.slice(0, 8)}...{approvalHash.slice(-6)}
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
         </div>
       )}
-      {purchaseHash && (
-        <div className="text-xs text-gray-500 text-center">
-          Purchase: {purchaseHash.slice(0, 10)}...{purchaseHash.slice(-8)}
+
+      {status === "success" && txHash && (
+        <div className="text-xs text-gray-500 space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-green-400">Purchase:</span>
+            <a
+              href={`https://testnet.snowtrace.io/tx/${txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-cyber-blue hover:underline flex items-center gap-1"
+            >
+              {txHash.slice(0, 8)}...{txHash.slice(-6)}
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {status === "error" && error && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 space-y-2">
+          <div className="flex items-start gap-2 text-sm">
+            <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <div className="text-red-400 font-semibold">Transaction Failed</div>
+              <div className="text-red-300 text-xs mt-1">{error}</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setStatus("idle");
+              setError(null);
+              setTxHash(null);
+              setApprovalHash(null);
+            }}
+            className="w-full px-3 py-2 text-xs bg-red-500/20 border border-red-500/50 text-red-400 rounded hover:bg-red-500/30 transition"
+          >
+            Dismiss
+          </button>
         </div>
       )}
     </div>

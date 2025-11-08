@@ -2,7 +2,6 @@
 
 import { usePathname } from 'next/navigation'
 import { Settings } from 'lucide-react'
-import { WalletConnect } from './WalletConnect'
 import Image from 'next/image'
 
 // Navigation bar component
@@ -26,8 +25,6 @@ export function Navbar() {
       </div>
       
       <div className="flex flex-wrap gap-2 md:gap-4 items-center justify-end max-w-full">
-        {!isHomePage && <WalletConnect />}
-        
         {/* Settings Button for all dapp pages */}
         {!isHomePage && (
           <a href="/dapp/settings" className="hidden sm:block">

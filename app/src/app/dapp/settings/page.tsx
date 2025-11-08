@@ -3,10 +3,13 @@
 import { Navbar } from '@/components/Navbar'
 import { BottomNav } from '@/components/BottomNav'
 import { User, Bell, Shield, Wallet, Globe, Moon } from 'lucide-react'
+import { useInvisibleWallet } from '@/providers/InvisibleWalletProvider'
 
 // Settings page - User preferences and configuration
 
 export default function DAppSettings() {
+  const { hydrated, isReady } = useInvisibleWallet()
+
   return (
     <div className="min-h-screen pb-28">
       <Navbar />
@@ -36,6 +39,23 @@ export default function DAppSettings() {
               <div className="font-medium">Email & Password</div>
               <div className="text-sm text-gray-400">Change your login credentials</div>
             </button>
+          </div>
+        </div>
+
+        {/* Invisible Wallet Status */}
+        <div className="cyber-card p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <Wallet className="w-6 h-6 text-cyber-blue" />
+            <h3 className="text-xl font-bold">Invisible Wallet</h3>
+          </div>
+          <div className="space-y-3 pl-9 text-sm text-gray-300">
+            <p>
+              Status: {hydrated ? (isReady ? 'Active' : 'Pending setup') : 'Loading...'}
+            </p>
+            <p>
+              Once active, your seed phrase is securely stored in Supabase and
+              transactions are handled by the custodial wallet.
+            </p>
           </div>
         </div>
 
@@ -153,7 +173,3 @@ export default function DAppSettings() {
     </div>
   )
 }
-
-
-
-
