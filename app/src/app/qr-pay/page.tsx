@@ -6,7 +6,6 @@ import { BottomNav } from '@/components/BottomNav'
 import { QRScanner } from '@/components/QRScanner'
 import { formatUnits } from 'viem'
 import { Scan, AlertCircle } from 'lucide-react'
-import BuyWithUSDC from '@/components/blockchain/BuyWithUSDC'
 import BuyWithUSDT from '@/components/blockchain/BuyWithUSDT'
 
 // Payment session data structure
@@ -44,8 +43,6 @@ function isSessionExpired(expiresAt: number): boolean {
   return Date.now() > expiresAt
 }
 
-type PaymentMethod = 'USDC' | 'USDT'
-
 const getEmojiForProduct = (name: string): string => {
   const lowerName = name.toLowerCase()
   if (lowerName.includes('espresso')) return '☕'
@@ -57,7 +54,6 @@ const getEmojiForProduct = (name: string): string => {
 }
 
 export default function QRPayPage() {
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('USDC')
   const [scannedData, setScannedData] = useState<PaymentQRData | null>(null)
   const [showScanner, setShowScanner] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -180,47 +176,21 @@ export default function QRPayPage() {
                   </div>
 
                   {/* Payment Method Selector */}
-                  <div className="flex justify-center gap-2 pt-2">
-                    <button
-                      onClick={() => setPaymentMethod('USDC')}
-                      className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                        paymentMethod === 'USDC'
-                          ? 'bg-cyber-blue text-black'
-                          : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                      }`}
-                    >
-                      Pay with USDC
-                    </button>
-                    <button
-                      onClick={() => setPaymentMethod('USDT')}
-                      className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                        paymentMethod === 'USDT'
-                          ? 'bg-cyber-blue text-black'
-                          : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                      }`}
-                    >
+                  <div className="flex justify-center pt-2">
+                    <span className="px-4 py-2 rounded-lg font-semibold bg-cyber-blue text-black">
                       Pay with USDT
-                    </button>
+                    </span>
                   </div>
 
                   {/* Payment Component */}
                   {scannedData.productId !== undefined && (
                     <div className="pt-4">
-                      {paymentMethod === 'USDC' ? (
-                        <BuyWithUSDC
-                          productId={scannedData.productId}
-                          priceUSD={scannedData.amount}
-                          sessionId={scannedData.sessionId}
-                          onSuccess={handlePaymentSuccess}
-                        />
-                      ) : (
-                        <BuyWithUSDT
-                          productId={scannedData.productId}
-                          priceUSD={scannedData.amount}
-                          sessionId={scannedData.sessionId}
-                          onSuccess={handlePaymentSuccess}
-                        />
-                      )}
+                      <BuyWithUSDT
+                        productId={scannedData.productId}
+                        priceUSD={scannedData.amount}
+                        sessionId={scannedData.sessionId}
+                        onSuccess={handlePaymentSuccess}
+                      />
                     </div>
                   )}
                 </>

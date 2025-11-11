@@ -9,7 +9,7 @@ import { ArrowLeftRight, Check } from 'lucide-react'
 // Mock token data
 const tokens = [
   { id: 'BREWFI', name: '$BREWFI', balance: 1250 },
-  { id: 'USDC', name: 'USDC', balance: 500 },
+  { id: 'USDT', name: 'USDT', balance: 500 },
   { id: 'AVAX', name: 'AVAX', balance: 2.5 },
 ]
 

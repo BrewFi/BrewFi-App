@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { Navbar } from '@/components/Navbar'
 import { BottomNav } from '@/components/BottomNav'
-import BuyWithUSDC from '@/components/blockchain/BuyWithUSDC'
 import BuyWithUSDT from '@/components/blockchain/BuyWithUSDT'
 import { useInvisibleWallet } from '@/providers/InvisibleWalletProvider'
 import { fetchAllProducts, type ContractProduct } from '@/lib/contractReader'
@@ -35,14 +34,11 @@ interface ProductDisplay {
   active: boolean
 }
 
-type PaymentMethod = 'USDC' | 'USDT'
-
 export default function BuyPage() {
   const { isReady } = useInvisibleWallet()
   const [products, setProducts] = useState<ProductDisplay[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('USDT')
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -115,33 +111,16 @@ export default function BuyPage() {
           <h1 className="text-4xl font-bold neon-text">Buy Coffee</h1>
           <p className="text-gray-400 text-sm sm:text-base">
             {isReady
-              ? 'Choose a drink and pay with USDC or USDT from your invisible wallet.'
+              ? 'Choose a drink and pay with USDT from your invisible wallet.'
               : 'Sign in or create an account to unlock the invisible wallet checkout.'}
           </p>
           
-          {/* Payment Method Selector */}
+          {/* Payment Method */}
           {isReady && (
-            <div className="flex justify-center gap-2 pt-2">
-              {/* <button
-                onClick={() => setPaymentMethod('USDC')}
-                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                  paymentMethod === 'USDC'
-                    ? 'bg-cyber-blue text-black'
-                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                }`}
-              >
-                Pay with USDC
-              </button> */}
-              <button
-                onClick={() => setPaymentMethod('USDT')}
-                className={`px-4 py-2 rounded-lg font-semibold transition-all ${
-                  paymentMethod === 'USDT'
-                    ? 'bg-cyber-blue text-black'
-                    : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                }`}
-              >
+            <div className="flex justify-center pt-2">
+              <span className="px-4 py-2 rounded-lg font-semibold bg-cyber-blue text-black">
                 Pay with USDT
-              </button>
+              </span>
             </div>
           )}
           
@@ -188,17 +167,10 @@ export default function BuyPage() {
                       Earn {reward} BREWFI
                     </div>
                   )}
-                  {paymentMethod === 'USDC' ? (
-                    <BuyWithUSDC
-                      productId={product.id}
-                      priceUSD={product.priceUSD}
-                    />
-                  ) : (
-                    <BuyWithUSDT
-                      productId={product.id}
-                      priceUSD={product.priceUSD}
-                    />
-                  )}
+                  <BuyWithUSDT
+                    productId={product.id}
+                    priceUSD={product.priceUSD}
+                  />
                 </article>
               )
             })}
