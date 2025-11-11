@@ -1,55 +1,52 @@
-# CoffeeChain ☕️ - $BREWFI
+# ☕️ **BrewFi (CoffeeChain)** — $BREWFI  
+**The loyalty network turning every coffee into connection.**
 
-A decentralized coffee loyalty rewards platform built on Avalanche. CoffeeChain enables coffee shops to reward customers with $BREWFI tokens, creating a transparent and engaging Web3 loyalty ecosystem.
+A decentralized coffee and restaurant loyalty rewards platform built on **Avalanche**, powered by **Tether (USDT)**.  
+BrewFi enables cafés and restaurants to reward customers with **$BREWFI tokens**, creating a transparent, community-driven Web3 loyalty ecosystem that bridges real-world dining with digital ownership.
 
-## 🏗️ Multi-Repo Structure
+---
 
-This repository contains **four independent projects** working together:
+## 🌐 **Access the DApp**
+You can now explore the BrewFi ecosystem live:
 
-```
-coffeechain/
-├── app/         → Next.js frontend (Web3 UI)
-├── backend/     → Node.js API server
-├── contracts/   → Foundry smart contracts
-└── docs/        → Hackathon deliverables
-```
+- **DApp:** [https://app.brew-fi.com/](https://app.brew-fi.com/)  
+- **Waitlist:** [https://brew-fi.com/](https://brew-fi.com/)  
 
-Each folder can be developed and run independently.
+Join the early-access program to earn rewards, test the POS loyalty flow, and help shape the future of real-world crypto adoption.
 
-## 🚀 Quick Start
+---
 
-### Frontend (Next.js)
-```bash
-cd app
-npm install
-npm run dev
-# Runs on http://localhost:3000
-```
+## 💡 **Why BrewFi Matters**
+Most POS systems stop at payments. BrewFi goes beyond by transforming every transaction into **retention, identity, and community**.  
+It’s the first platform where **each coffee purchased earns digital tokens**, which can be redeemed, staked, or gifted — driving real customer loyalty powered by blockchain technology.
 
-### Backend (Node.js API)
-```bash
-cd backend
-npm install
-npm run dev
-# Runs on http://localhost:4000
-```
+BrewFi is redefining restaurant software by merging **enterprise-grade infrastructure** with **real-world crypto adoption**.  
+Through seamless design, it allows small and medium-sized businesses to offer loyalty experiences previously reserved for global franchises — all while connecting every transaction to the Avalanche blockchain.
 
-### Smart Contracts (Foundry)
-```bash
-cd contracts
-forge build
-forge test
-```
+---
 
-## 📚 Documentation
+## 🌍 **Why Tether (USDT) Matters**
+Tether is the financial backbone of the BrewFi ecosystem.  
+By leveraging **USDT**, the world’s most trusted and widely used stablecoin:
 
-See the README.md in each subfolder for detailed setup instructions:
-- **app/README.md** - Frontend setup and configuration
-- **backend/README.md** - Backend API and database setup
-- **contracts/README.md** - Smart contract development
-- **docs/README.md** - Hackathon materials and tokenomics
+- Transactions remain **instant, stable, and transparent**.  
+- SMBs can participate in Web3 **without volatility risk**.  
+- Customers earn real, **fiat-pegged value** with every reward.  
+- Tether’s global presence accelerates **stablecoin adoption in everyday commerce**.
 
-## 🎯 Built for Avalanche Hackathon
+This integration bridges blockchain with the real economy — turning stablecoins into an everyday loyalty currency.  
+Every reward is denominated in real value, making blockchain adoption **invisible yet indispensable** for everyday businesses.
 
-3-day demo showcasing Web3 loyalty rewards on Avalanche C-Chain.
+---
+
+## 🌎 **Real Traction**
+BrewFi is already gaining traction with **16 cafés and restaurants** across **Costa Rica and Chile** expressing strong interest in joining the platform.  
+This week, our team is traveling to **Argentina** to **onboard new users and partners**, expanding the BrewFi network and testing live deployments in real business environments.  
+
+Our goal is to empower local businesses across Latin America — transforming how cafés and restaurants build loyalty, retain customers, and connect with the global economy through Tether and Avalanche.
+
+---
+
+## 🏗️ **Multi-Repo Architecture**
+This repository contains **four independent but interconnected projects**:
 
