@@ -47,6 +47,15 @@ Our goal is to empower local businesses across Latin America — transforming ho
 
 ---
 
-## 🏗️ **Multi-Repo Architecture**
-This repository contains **four independent but interconnected projects**:
+
+## 👨‍💻 **Team**
+
+Built by full-stack developers inspired by **Tether’s mission** to connect stable, borderless money with the real economy:
+
+- [@MPSxDev (Manuel Paredes)](https://x.com/MPSxDev) — [LinkedIn](https://www.linkedin.com/in/manuel-paredes-seura/)  
+- [@anwar_zlcr (Anwar Sánchez)](https://x.com/anwar_zlcr) — [anwarsanchez.com](https://anwarsanchez.com)  
+
+Our work with **BrewFi** aligns with **Tether’s vision** — enabling cafés and restaurants to use **USDT** as the foundation for loyalty, stability, and global inclusion.  
+We’re turning every coffee purchase into a real-world use case for stablecoins — practical, transparent, and built for everyday life.
+
 
